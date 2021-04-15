@@ -1,3 +1,4 @@
+import I18n from "I18n";
 import highlightSyntax from "discourse/lib/highlight-syntax";
 import lightbox from "discourse/lib/lightbox";
 import { iconHTML } from "discourse-common/lib/icon-library";
@@ -102,6 +103,30 @@ export default {
           });
         },
         { id: "onebox-source-icons" }
+      );
+
+      api.decorateCookedElement(
+        (element) => {
+          const containers = element.getElementsByClassName("video-container");
+          for (let i = 0; i < containers.length; ++i) {
+            const video = containers[i].getElementsByTagName("video")[0];
+            video.addEventListener("loadeddata", () => {
+              setTimeout(() => {
+                if (video.videoWidth === 0 && video.videoHeight === 0) {
+                  const notice = document.createElement("div");
+                  notice.className = "notice";
+                  notice.innerHTML =
+                    iconHTML("exclamation-triangle") +
+                    " " +
+                    I18n.t("cannot_render_video");
+
+                  containers[i].appendChild(notice);
+                }
+              }, 500);
+            });
+          }
+        },
+        { id: "discourse-video-check" }
       );
     });
   },
