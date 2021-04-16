@@ -1,21 +1,34 @@
 {{#d-modal-body title=(if invite.id "user.invited.invite.edit_title" "user.invited.invite.new_title")}}
   <form>
     <div class="input-group invite-link">
-      <label for="invite-link">{{i18n "user.invited.invite.instructions"}}</label>
+      {{#if isShare}}
+        <label for="invite-link">Share a direct link to this topic:</label>
+      {{else}}
+        <label for="invite-link">{{i18n "user.invited.invite.instructions"}}</label>
+      {{/if}}
       <div class="invite-input-with-button">
         {{input
           name="invite-link"
           class="invite-link"
-          value=invite.link
+          value=(if isShare topicUrl invite.link)
           readonly=true
         }}
         {{copy-button selector="input.invite-link" copied=(action "copied")}}
       </div>
     </div>
 
-    <p>{{expiresAtLabel}}</p>
+    {{#unless isShare}}
+      <div class="input-group">{{expiresAtLabel}}</div>
+    {{/unless}}
 
     <div class="input-group invite-type">
+      {{#if topic}}
+        <div class="radio-group">
+          {{radio-button id="invite-type-share" name="invite-type" value="share" selection=type}}
+          <label for="invite-type-share">{{i18n "user.invited.invite.type_share"}}</label>
+        </div>
+      {{/if}}
+
       <div class="radio-group">
         {{radio-button id="invite-type-link" name="invite-type" value="link" selection=type}}
         <label for="invite-type-link">{{i18n "user.invited.invite.type_link"}}</label>
@@ -26,6 +39,22 @@
         <label for="invite-type-email">{{i18n "user.invited.invite.type_email"}}</label>
       </div>
     </div>
+
+    {{#if isShare}}
+      <div class="input-group invite-users">
+        <label for="invite-users">Notify following users of this topic:</label>
+        <div class="invite-input-with-button">
+          {{user-chooser
+            value=users
+            onChange=(action "onChangeUsers")
+          }}
+          {{d-button
+            icon="check"
+            class="btn-primary"
+          }}
+        </div>
+      </div>
+    {{/if}}
 
     {{#if isLink}}
       <div class="input-group invite-max-redemptions">
@@ -62,34 +91,36 @@
 
     {{#if currentUser.staff}}
       {{#if showAdvanced}}
-        <div class="input-group invite-to-groups">
-          <label>{{i18n "user.invited.invite.add_to_groups"}}</label>
-          {{group-chooser
-            content=allGroups
-            value=buffered.groupIds
-            labelProperty="name"
-            onChange=(action (mut buffered.groupIds))
-          }}
-        </div>
+        {{#unless isShare}}
+          <div class="input-group invite-to-groups">
+            <label>{{i18n "user.invited.invite.add_to_groups"}}</label>
+            {{group-chooser
+              content=allGroups
+              value=buffered.groupIds
+              labelProperty="name"
+              onChange=(action (mut buffered.groupIds))
+            }}
+          </div>
 
-        <div class="input-group invite-to-topic">
-          {{choose-topic
-            selectedTopicId=buffered.topicId
-            topicTitle=buffered.topicTitle
-            additionalFilters="status:public"
-            label="user.invited.invite.invite_to_topic"
-          }}
-        </div>
+          <div class="input-group invite-to-topic">
+            {{choose-topic
+              selectedTopicId=buffered.topicId
+              topicTitle=buffered.topicTitle
+              additionalFilters="status:public"
+              label="user.invited.invite.invite_to_topic"
+            }}
+          </div>
 
-        <div class="input-group invite-expires-at">
-          {{future-date-input
-            displayLabel=(i18n "user.invited.invite.expires_at")
-            includeDateTime=true
-            includeMidFuture=true
-            clearable=true
-            onChangeInput=(action (mut buffered.expires_at))
-          }}
-        </div>
+          <div class="input-group invite-expires-at">
+            {{future-date-input
+              displayLabel=(i18n "user.invited.invite.expires_at")
+              includeDateTime=true
+              includeMidFuture=true
+              clearable=true
+              onChangeInput=(action (mut buffered.expires_at))
+            }}
+          </div>
+        {{/unless}}
 
         {{#if isEmail}}
           <div class="input-group invite-custom-message">
@@ -103,13 +134,23 @@
 {{/d-modal-body}}
 
 <div class="modal-footer">
-  {{d-button
-    icon="link"
-    label="user.invited.invite.save_invite"
-    class="btn-primary save-invite"
-    action=(action "saveInvite")
-    disabled=disabled
-  }}
+  {{#if isShare}}
+    <div class="sources">
+      {{#each sources as |s|}}
+        {{share-source source=s title=model.title action=(action "share")}}
+      {{/each}}
+    </div>
+  {{/if}}
+
+  {{#unless isShare}}
+    {{d-button
+      icon="link"
+      label="user.invited.invite.save_invite"
+      class="btn-primary save-invite"
+      action=(action "saveInvite")
+      disabled=disabled
+    }}
+  {{/unless}}
 
   {{#if isEmail}}
     {{d-button
@@ -121,4 +162,11 @@
     }}
   {{/if}}
 
+  {{#unless isShare}}
+    {{d-button
+      action=(action "toggleAdvanced")
+      class="show-advanced"
+      icon="cog"
+      title=(if showAdvanced "user.invited.invite.hide_advanced" "user.invited.invite.show_advanced")}}
+  {{/unless}}
 </div>

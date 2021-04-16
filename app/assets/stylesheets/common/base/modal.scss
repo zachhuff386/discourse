@@ -855,6 +855,7 @@
     }
   }
 
+  .user-chooser,
   .group-chooser,
   .future-date-input-selector {
     width: 100%;
@@ -862,6 +863,7 @@
 
   .input-group input[type="text"],
   .input-group .btn,
+  .user-chooser .select-kit-header,
   .future-date-input .select-kit-header {
     height: 34px;
   }
@@ -875,6 +877,18 @@
 
     .btn {
       margin-left: 3px;
+    }
+  }
+
+  .sources {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    flex-direction: row;
+
+    .social-link {
+      font-size: $font-up-6;
+      margin-right: 8px;
     }
   }
 

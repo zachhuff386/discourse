@@ -1504,7 +1504,7 @@ en:
           expires_at: "When will this invite link expire?"
 
         invite:
-          new_title: "Create Invite"
+          new_title: "Invite"
           edit_title: "Edit Invite"
 
           instructions: "Share this link to instantly grant access to this site:"
@@ -1515,8 +1515,9 @@ en:
           show_advanced: "Show Advanced Options"
           hide_advanced: "Hide Advanced Options"
 
-          type_link: "Invite one or more people with a link"
-          type_email: "Invite just one email address"
+          type_share: "Share the topic via link or notify existing users"
+          type_link: "Invite one or more persons via link to join the community"
+          type_email: "Invite just one person via email to join the community"
 
           email: "Limit to email address:"
           max_redemptions_allowed: "Max number of uses:"
