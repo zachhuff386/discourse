@@ -37,6 +37,7 @@ class User < ActiveRecord::Base
   has_many :targeted_group_histories, dependent: :destroy, foreign_key: :target_user_id, class_name: 'GroupHistory'
   has_many :reviewable_scores, dependent: :destroy
   has_many :invites, foreign_key: :invited_by_id, dependent: :destroy
+  has_many :user_custom_fields, dependent: :destroy
 
   has_one :user_option, dependent: :destroy
   has_one :user_avatar, dependent: :destroy
@@ -182,6 +183,9 @@ class User < ActiveRecord::Base
 
   # set to true to optimize creation and save for imports
   attr_accessor :import_mode
+
+  # Cache for user custom fields. Currently it is used to display quick search results
+  attr_accessor :custom_data
 
   scope :with_email, ->(email) do
     joins(:user_emails).where("lower(user_emails.email) IN (?)", email)
@@ -868,8 +872,12 @@ class User < ActiveRecord::Base
     Digest::MD5.hexdigest(username)[0...15].to_i(16) % length
   end
 
+  def is_system_user?
+    id == Discourse::SYSTEM_USER_ID
+  end
+
   def avatar_template
-    use_small_logo = id == Discourse::SYSTEM_USER_ID &&
+    use_small_logo = is_system_user? &&
       SiteSetting.logo_small && SiteSetting.use_site_small_logo_as_system_avatar
 
     if use_small_logo
@@ -1421,7 +1429,8 @@ class User < ActiveRecord::Base
   end
 
   def index_search
-    SearchIndexer.index(self)
+    # force is needed as user custom fields are updated using SQL and after_save callback is not triggered
+    SearchIndexer.index(self, force: true)
   end
 
   def clear_global_notice_if_needed
@@ -1537,17 +1546,27 @@ class User < ActiveRecord::Base
 
     values = []
 
-    %w{watching watching_first_post tracking regular muted}.each do |s|
-      category_ids = SiteSetting.get("default_categories_#{s}").split("|").map(&:to_i)
+    # The following site settings are used to pre-populate default category
+    # tracking settings for a user:
+    #
+    # * default_categories_watching
+    # * default_categories_tracking
+    # * default_categories_watching_first_post
+    # * default_categories_regular
+    # * default_categories_muted
+    %w{watching watching_first_post tracking regular muted}.each do |setting|
+      category_ids = SiteSetting.get("default_categories_#{setting}").split("|").map(&:to_i)
       category_ids.each do |category_id|
         next if category_id == 0
-        values << "(#{self.id}, #{category_id}, #{CategoryUser.notification_levels[s.to_sym]})"
+        values << {
+          user_id: self.id,
+          category_id: category_id,
+          notification_level: CategoryUser.notification_levels[setting.to_sym]
+        }
       end
     end
 
-    if values.present?
-      DB.exec("INSERT INTO category_users (user_id, category_id, notification_level) VALUES #{values.join(",")}")
-    end
+    CategoryUser.insert_all!(values) if values.present?
   end
 
   def set_default_tags_preferences
@@ -1555,12 +1574,25 @@ class User < ActiveRecord::Base
 
     values = []
 
-    %w{watching watching_first_post tracking muted}.each do |s|
-      tag_names = SiteSetting.get("default_tags_#{s}").split("|")
+    # The following site settings are used to pre-populate default tag
+    # tracking settings for a user:
+    #
+    # * default_tags_watching
+    # * default_tags_tracking
+    # * default_tags_watching_first_post
+    # * default_tags_muted
+    %w{watching watching_first_post tracking muted}.each do |setting|
+      tag_names = SiteSetting.get("default_tags_#{setting}").split("|")
       now = Time.zone.now
 
       Tag.where(name: tag_names).pluck(:id).each do |tag_id|
-        values << { user_id: self.id, tag_id: tag_id, notification_level: TagUser.notification_levels[s.to_sym], created_at: now, updated_at: now }
+        values << {
+          user_id: self.id,
+          tag_id: tag_id,
+          notification_level: TagUser.notification_levels[setting.to_sym],
+          created_at: now,
+          updated_at: now
+        }
       end
     end
 

@@ -59,7 +59,8 @@ class UserSerializer < UserCardSerializer
                      :can_change_website,
                      :user_api_keys,
                      :user_auth_tokens,
-                     :user_notification_schedule
+                     :user_notification_schedule,
+                     :use_logo_small_as_avatar
 
   untrusted_attributes :bio_raw,
                        :bio_cooked,
@@ -206,39 +207,39 @@ class UserSerializer < UserCardSerializer
   ### PRIVATE ATTRIBUTES
   ###
   def muted_tags
-    TagUser.lookup(object, :muted).joins(:tag).pluck('tags.name')
+    tags_with_notification_level(:muted)
   end
 
   def tracked_tags
-    TagUser.lookup(object, :tracking).joins(:tag).pluck('tags.name')
+    tags_with_notification_level(:tracked)
   end
 
   def watching_first_post_tags
-    TagUser.lookup(object, :watching_first_post).joins(:tag).pluck('tags.name')
+    tags_with_notification_level(:watching_first_post)
   end
 
   def watched_tags
-    TagUser.lookup(object, :watching).joins(:tag).pluck('tags.name')
+    tags_with_notification_level(:watching)
   end
 
   def muted_category_ids
-    CategoryUser.lookup(object, :muted).pluck(:category_id)
+    categories_with_notification_level(:muted)
   end
 
   def regular_category_ids
-    CategoryUser.lookup(object, :regular).pluck(:category_id)
+    categories_with_notification_level(:regular)
   end
 
   def tracked_category_ids
-    CategoryUser.lookup(object, :tracking).pluck(:category_id)
+    categories_with_notification_level(:tracking)
   end
 
   def watched_category_ids
-    CategoryUser.lookup(object, :watching).pluck(:category_id)
+    categories_with_notification_level(:watching)
   end
 
   def watched_first_post_category_ids
-    CategoryUser.lookup(object, :watching_first_post).pluck(:category_id)
+    categories_with_notification_level(:watching_first_post)
   end
 
   def muted_usernames
@@ -307,6 +308,10 @@ class UserSerializer < UserCardSerializer
 
   def profile_background_upload_url
     object.profile_background_upload&.url
+  end
+
+  def use_logo_small_as_avatar
+    object.is_system_user? && SiteSetting.logo_small && SiteSetting.use_site_small_logo_as_system_avatar
   end
 
   private

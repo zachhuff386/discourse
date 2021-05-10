@@ -2436,6 +2436,29 @@ RSpec.describe TopicsController do
           expect(body["post_ids"]).to eq([post2.id])
         end
       end
+
+      describe 'custom filters' do
+        fab!(:post2) { Fabricate(:post, topic: topic, percent_rank: 0.2) }
+        fab!(:post3) { Fabricate(:post, topic: topic, percent_rank: 0.5) }
+        it 'should return the right posts' do
+          TopicView.add_custom_filter("percent") do |posts, topic_view|
+            posts.where(percent_rank: 0.5)
+          end
+
+          get "/t/#{topic.id}.json", params: {
+            post_number: post.post_number,
+            filter: 'percent'
+          }
+
+          expect(response.status).to eq(200)
+
+          body = response.parsed_body
+
+          expect(body["post_stream"]["posts"].map { |p| p["id"] }).to eq([post3.id])
+        ensure
+          TopicView.instance_variable_set(:@custom_filters, [])
+        end
+      end
     end
   end
 
@@ -2539,6 +2562,44 @@ RSpec.describe TopicsController do
       topic.trash!
       get "/t/foo/#{topic.id}.rss"
       expect(response.status).to eq(404)
+    end
+  end
+
+  describe '#invite_notify' do
+    let(:user2) { Fabricate(:user) }
+
+    it 'does not notify same user multiple times' do
+      sign_in(user)
+
+      expect { post "/t/#{topic.id}/invite-notify.json", params: { usernames: [user2.username] } }
+        .to change { Notification.count }.by(1)
+      expect(response.status).to eq(200)
+
+      expect { post "/t/#{topic.id}/invite-notify.json", params: { usernames: [user2.username] } }
+        .to change { Notification.count }.by(0)
+      expect(response.status).to eq(200)
+
+      freeze_time 1.day.from_now
+
+      expect { post "/t/#{topic.id}/invite-notify.json", params: { usernames: [user2.username] } }
+        .to change { Notification.count }.by(1)
+      expect(response.status).to eq(200)
+    end
+
+    it 'does not let regular users to notify multiple users' do
+      sign_in(user)
+
+      expect { post "/t/#{topic.id}/invite-notify.json", params: { usernames: [admin.username, user2.username] } }
+        .to change { Notification.count }.by(0)
+      expect(response.status).to eq(400)
+    end
+
+    it 'lets staff to notify multiple users' do
+      sign_in(admin)
+
+      expect { post "/t/#{topic.id}/invite-notify.json", params: { usernames: [user.username, user2.username] } }
+        .to change { Notification.count }.by(2)
+      expect(response.status).to eq(200)
     end
   end
 
