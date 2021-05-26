@@ -137,13 +137,17 @@ export default Component.extend({
         ".modal-body input[autofocus]"
       );
 
-      if (!focusTarget && !this.site.mobileView) {
+      if (!focusTarget) {
         focusTarget = this.element.querySelector(
           ".modal-body input, .modal-body button, .modal-footer input, .modal-footer button"
         );
       }
       if (focusTarget) {
-        afterTransition(() => focusTarget.focus());
+        if (this.site.mobileView) {
+          focusTarget.focus();
+        } else {
+          afterTransition(() => focusTarget.focus());
+        }
       }
     }
   },
