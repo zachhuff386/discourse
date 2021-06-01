@@ -34,7 +34,10 @@
 #   Run tests for a specific plugin (with a plugin mounted from host filesystem):
 #       docker run -e SKIP_CORE=1 SINGLE_PLUGIN='my-awesome-plugin' -v $(pwd)/my-awesome-plugin:/var/www/discourse/plugins/my-awesome-plugin discourse/discourse_test:release
 
-def run_or_fail(command)
+def run_or_fail(command, output: true)
+  if !output
+    command = "#{command} >/dev/null 2>&1"
+  end
   log(command)
   pid = Process.spawn(command)
   Process.wait(pid)
@@ -121,10 +124,10 @@ task 'docker:test' do
       # for js tests
       ENV["SKIP_MULTISITE"] = "1" if ENV["JS_ONLY"]
 
-      @good &&= run_or_fail("bundle exec rake db:create")
+      @good &&= run_or_fail("bundle exec rake db:create", output: false)
 
       if ENV['USE_TURBO']
-        @good &&= run_or_fail("bundle exec rake parallel:create")
+        @good &&= run_or_fail("bundle exec rake parallel:create", output: false)
       end
 
       if ENV["INSTALL_OFFICIAL_PLUGINS"]
@@ -150,10 +153,10 @@ task 'docker:test' do
           "LOAD_PLUGINS=1 "
         end
 
-      @good &&= run_or_fail("#{command_prefix}bundle exec rake db:migrate")
+      @good &&= run_or_fail("#{command_prefix}bundle exec rake db:migrate", output: false)
 
       if ENV['USE_TURBO']
-        @good &&= run_or_fail("#{command_prefix}bundle exec rake parallel:migrate")
+        @good &&= run_or_fail("#{command_prefix}bundle exec rake parallel:migrate", output: false)
       end
 
       puts "travis_fold:end:prepare_tests" if ENV["TRAVIS"]
