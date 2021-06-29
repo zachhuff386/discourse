@@ -24,6 +24,7 @@
 //= require show-html.js
 //= require buffered-proxy
 //= require jquery.autoellipsis-1.0.10
+//= require uppy.js
 //= require virtual-dom
 //= require virtual-dom-amd
 //= require discourse-shims
