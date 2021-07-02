@@ -71,6 +71,11 @@ class UploadsController < ApplicationController
     render json: uploads.to_json
   end
 
+  def generate_presigned
+    url, key = Discourse.store.presigned_put_object_url(params[:filename])
+    render json: { method: :put, url: url, key: key }
+  end
+
   def show
     # do not serve uploads requested via XHR to prevent XSS
     return xhr_not_allowed if request.xhr?

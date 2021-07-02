@@ -31,6 +31,7 @@ import { later, next, run, schedule, throttle } from "@ember/runloop";
 import Component from "@ember/component";
 import Composer from "discourse/models/composer";
 import EmberObject from "@ember/object";
+import Uppy, { AwsS3, XHRUpload } from "uppy";
 import I18n from "I18n";
 import { ajax } from "discourse/lib/ajax";
 import bootbox from "bootbox";
@@ -236,6 +237,7 @@ export default Component.extend({
     }
 
     this._bindUploadTarget();
+    this._bindUppyUploadTarget();
     this.appEvents.trigger("composer:will-open");
   },
 
@@ -650,12 +652,139 @@ export default Component.extend({
     });
   },
 
+  _csrfToken() {
+    return document.querySelector("meta[name='csrf-token']").content;
+  },
+
+  _bindUppyUploadTarget() {
+    const uppy = new Uppy({ autoProceed: true });
+    let useXhr = false;
+
+    if (useXhr) {
+      uppy.use(XHRUpload, {
+        endpoint: getURL(`/uploads.json?client_id=${this.messageBus.clientId}`),
+        headers: {
+          "X-CSRF-Token": this._csrfToken(),
+        },
+      });
+    } else {
+      uppy.use(AwsS3, {
+        getUploadParameters(file) {
+          return fetch("/uploads/generate-presigned", {
+            method: "post",
+            headers: {
+              accept: "application/json",
+              "content-type": "application/json",
+              "X-CSRF-Token": this._csrfToken(),
+            },
+            body: JSON.stringify({
+              filename: file.name,
+              contentType: file.type,
+            }),
+          })
+            .then((response) => {
+              // Parse the JSON response.
+              return response.json();
+            })
+            .then((data) => {
+              // Return an object in the correct shape.
+              return {
+                method: data.method,
+                url: data.url,
+                // Provide content type header required by S3
+                headers: {
+                  "Content-Type": file.type,
+                },
+              };
+            });
+        },
+      });
+    }
+
+    uppy.on("upload", (data) => {
+      const files = data.fileIDs.map((fileId) => uppy.getFile(fileId));
+      const opts = {
+        user: this.currentUser,
+        siteSettings: this.siteSettings,
+        isPrivateMessage: false,
+        allowStaffToUploadAnyFileInPm: this.siteSettings
+          .allow_staff_to_upload_any_file_in_pm,
+      };
+
+      files.forEach((file) => {
+        const isUploading = validateUploadedFiles([file], opts);
+        this.setProperties({ uploadProgress: 0, isUploading });
+        let fileData = { files: [file] };
+        this._setUploadPlaceholderSend(fileData);
+        this.appEvents.trigger("composer:insert-text", this.uploadPlaceholder);
+      });
+    });
+
+    uppy.on("upload-success", (file, response) => {
+      let upload = response.body;
+      this._setUploadPlaceholderDone({ files: [file] });
+      const markdown = uploadMarkdownResolvers.reduce(
+        (md, resolver) => resolver(upload) || md,
+        getUploadMarkdown(upload)
+      );
+
+      cacheShortUploadUrl(upload.short_url, upload);
+      this.appEvents.trigger(
+        "composer:replace-text",
+        this.uploadPlaceholder.trim(),
+        markdown
+      );
+    });
+
+    uppy.on("progress", (progress) => {
+      // eslint-disable-next-line no-console
+      console.log(progress);
+      this.set("uploadProgress", progress);
+    });
+
+    const fileInput = document.getElementById("file-uploader-uppy");
+
+    fileInput.addEventListener("change", (event) => {
+      const files = Array.from(event.target.files);
+
+      files.forEach((file) => {
+        try {
+          uppy.addFile({
+            source: "file input",
+            name: file.name,
+            type: file.type,
+            data: file,
+          });
+        } catch (err) {
+          if (err.isRestriction) {
+            // handle restrictions
+            // eslint-disable-next-line no-console
+            console.log("Restriction error:", err);
+          } else {
+            // handle other errors
+            // eslint-disable-next-line no-console
+            console.error(err);
+          }
+        }
+      });
+    });
+
+    uppy.on("file-removed", () => {
+      fileInput.value = null;
+      this._resetUpload(true);
+    });
+
+    uppy.on("complete", () => {
+      fileInput.value = null;
+      this._resetUpload(false);
+    });
+  },
+
   _bindUploadTarget() {
     this._unbindUploadTarget(); // in case it's still bound, let's clean it up first
     this._pasted = false;
 
     const $element = $(this.element);
-
     $.blueimp.fileupload.prototype.processActions = uploadProcessorActions;
 
     $element.fileupload({
@@ -977,6 +1106,11 @@ export default Component.extend({
       this.togglePreview();
     },
 
+    uploadWithUppy() {
+      // eslint-disable-next-line no-console
+      console.log("ok");
+    },
+
     extraButtons(toolbar) {
       toolbar.addButton({
         id: "quote",
@@ -994,6 +1128,15 @@ export default Component.extend({
           icon: this.uploadIcon,
           title: "upload",
           sendAction: this.showUploadModal,
+        });
+
+        // uppy
+        toolbar.addButton({
+          id: "uploadUppy",
+          group: "insertions",
+          icon: "crosshairs",
+          title: "composer.uppy_upload",
+          sendAction: this.uploadWithUppy,
         });
       }
 

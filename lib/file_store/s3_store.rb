@@ -246,6 +246,19 @@ module FileStore
       FileUtils.mv(old_upload_path, public_upload_path) if old_upload_path
     end
 
+    def presigned_put_object_url(filename, key_prefix = "uppy_test")
+      key = "#{key_prefix}/#{SecureRandom.hex(4)}/#{filename}"
+      signer = Aws::S3::Presigner.new(client: s3_helper.s3_client)
+      url = signer.presigned_url(
+        :put_object,
+        bucket: s3_bucket_name,
+        key: key,
+        acl: "private",
+        expires_in: S3Helper::UPLOAD_URL_EXPIRES_AFTER_SECONDS
+      )
+      [url, key]
+    end
+
     private
 
     def presigned_url(

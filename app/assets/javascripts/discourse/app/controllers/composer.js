@@ -372,6 +372,10 @@ export default Controller.extend({
   },
 
   actions: {
+    uploadWithUppy() {
+      document.getElementById("file-uploader-uppy").click();
+    },
+
     togglePreview() {
       this.toggleProperty("showPreview");
     },

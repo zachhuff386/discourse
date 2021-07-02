@@ -15,7 +15,13 @@ class S3Helper
   # * cache time for secure-media URLs
   # * expiry time for S3 presigned URLs, which include backup downloads and
   #   any upload that has a private ACL (e.g. secure uploads)
-  DOWNLOAD_URL_EXPIRES_AFTER_SECONDS ||= 300
+  DOWNLOAD_URL_EXPIRES_AFTER_SECONDS ||= 5.minutes.to_i
+
+  ##
+  # Controls the following:
+  #
+  # * presigned put_object URLs for direct S3 uploads
+  UPLOAD_URL_EXPIRES_AFTER_SECONDS ||= 10.minutes.to_i
 
   def initialize(s3_bucket_name, tombstone_prefix = '', options = {})
     @s3_client = options.delete(:client)
@@ -242,6 +248,14 @@ class S3Helper
     get_path_for_s3_upload(path)
   end
 
+  def s3_bucket
+    @s3_bucket ||= begin
+      bucket = s3_resource.bucket(@s3_bucket_name)
+      bucket.create unless bucket.exists?
+      bucket
+    end
+  end
+
   private
 
   def default_s3_options
@@ -269,14 +283,6 @@ class S3Helper
 
   def s3_resource
     Aws::S3::Resource.new(client: s3_client)
-  end
-
-  def s3_bucket
-    @s3_bucket ||= begin
-      bucket = s3_resource.bucket(@s3_bucket_name)
-      bucket.create unless bucket.exists?
-      bucket
-    end
   end
 
   def check_missing_site_options
