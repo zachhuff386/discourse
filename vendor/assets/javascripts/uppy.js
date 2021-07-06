@@ -2,11 +2,14 @@
 // custom-uppy.js
 window.Uppy = {}
 Uppy.Core = require('@uppy/core')
+const { Plugin } = require('@uppy/core')
+Uppy.Plugin = Plugin
 Uppy.XHRUpload = require('@uppy/xhr-upload')
 Uppy.AwsS3 = require('@uppy/aws-s3')
 Uppy.AwsS3Multipart = require('@uppy/aws-s3-multipart')
+Uppy.GoldenRetriever = require('@uppy/golden-retriever')
 
-},{"@uppy/aws-s3":6,"@uppy/aws-s3-multipart":4,"@uppy/core":16,"@uppy/xhr-upload":41}],2:[function(require,module,exports){
+},{"@uppy/aws-s3":6,"@uppy/aws-s3-multipart":4,"@uppy/core":16,"@uppy/golden-retriever":23,"@uppy/xhr-upload":46}],2:[function(require,module,exports){
 // Adapted from https://github.com/Flet/prettier-bytes/
 // Changing 1000 bytes to 1024, so we can keep uppercase KB vs kB
 // ISC License (c) Dan Flettre https://github.com/Flet/prettier-bytes/blob/master/LICENSE
@@ -508,7 +511,7 @@ var MultipartUploader = /*#__PURE__*/function () {
 }();
 
 module.exports = MultipartUploader;
-},{"@uppy/utils/lib/AbortController":20,"@uppy/utils/lib/delay":26}],4:[function(require,module,exports){
+},{"@uppy/utils/lib/AbortController":25,"@uppy/utils/lib/delay":31}],4:[function(require,module,exports){
 var _class, _temp;
 
 function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
@@ -1085,8 +1088,8 @@ module.exports = (_temp = _class = /*#__PURE__*/function (_Plugin) {
   };
 
   return AwsS3Multipart;
-}(Plugin), _class.VERSION = "1.8.17", _temp);
-},{"./MultipartUploader":3,"@uppy/companion-client":13,"@uppy/core":16,"@uppy/utils/lib/EventTracker":21,"@uppy/utils/lib/RateLimitedQueue":24,"@uppy/utils/lib/emitSocketProgress":27,"@uppy/utils/lib/getSocketHost":34}],5:[function(require,module,exports){
+}(Plugin), _class.VERSION = "1.8.18", _temp);
+},{"./MultipartUploader":3,"@uppy/companion-client":13,"@uppy/core":16,"@uppy/utils/lib/EventTracker":26,"@uppy/utils/lib/RateLimitedQueue":29,"@uppy/utils/lib/emitSocketProgress":32,"@uppy/utils/lib/getSocketHost":39}],5:[function(require,module,exports){
 function _extends() { _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
 
 var cuid = require('cuid');
@@ -1500,7 +1503,7 @@ module.exports = /*#__PURE__*/function () {
 
   return MiniXHRUpload;
 }();
-},{"@uppy/companion-client":13,"@uppy/utils/lib/EventTracker":21,"@uppy/utils/lib/NetworkError":22,"@uppy/utils/lib/ProgressTimeout":23,"@uppy/utils/lib/emitSocketProgress":27,"@uppy/utils/lib/getSocketHost":34,"@uppy/utils/lib/isNetworkError":38,"cuid":43}],6:[function(require,module,exports){
+},{"@uppy/companion-client":13,"@uppy/utils/lib/EventTracker":26,"@uppy/utils/lib/NetworkError":27,"@uppy/utils/lib/ProgressTimeout":28,"@uppy/utils/lib/emitSocketProgress":32,"@uppy/utils/lib/getSocketHost":39,"@uppy/utils/lib/isNetworkError":43,"cuid":48}],6:[function(require,module,exports){
 var _class, _temp;
 
 function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
@@ -1528,8 +1531,8 @@ function _extends() { _extends = Object.assign || function (target) { for (var i
  * will expire before some files can be uploaded.
  *
  * The long-term solution to this problem is to change the upload pipeline so that files
- * can be sent to the next step individually. That requires a breakig change, so it is
- * planned for Uppy v2.
+ * can be sent to the next step individually. That requires a breaking change, so it is
+ * planned for some future Uppy version.
  *
  * In the mean time, this plugin is stuck with a hackier approach: the necessary parts
  * of the XHRUpload implementation were copied into this plugin, as the MiniXHRUpload
@@ -1836,8 +1839,8 @@ module.exports = (_temp = _class = /*#__PURE__*/function (_Plugin) {
   };
 
   return AwsS3;
-}(Plugin), _class.VERSION = "1.7.11", _temp);
-},{"./MiniXHRUpload":5,"./isXml":7,"@uppy/companion-client":13,"@uppy/core":16,"@uppy/utils/lib/RateLimitedQueue":24,"@uppy/utils/lib/Translator":25,"@uppy/utils/lib/hasProperty":36,"@uppy/utils/lib/settle":40,"qs-stringify":51,"url-parse":54}],7:[function(require,module,exports){
+}(Plugin), _class.VERSION = "1.7.12", _temp);
+},{"./MiniXHRUpload":5,"./isXml":7,"@uppy/companion-client":13,"@uppy/core":16,"@uppy/utils/lib/RateLimitedQueue":29,"@uppy/utils/lib/Translator":30,"@uppy/utils/lib/hasProperty":41,"@uppy/utils/lib/settle":45,"qs-stringify":56,"url-parse":59}],7:[function(require,module,exports){
 /**
  * Remove parameters like `charset=utf-8` from the end of a mime type string.
  *
@@ -2077,7 +2080,7 @@ module.exports = /*#__PURE__*/function (_RequestClient) {
 
   return Provider;
 }(RequestClient);
-},{"./RequestClient":10,"./tokenStorage":14,"qs-stringify":51,"url-parse":54}],10:[function(require,module,exports){
+},{"./RequestClient":10,"./tokenStorage":14,"qs-stringify":56,"url-parse":59}],10:[function(require,module,exports){
 'use strict';
 
 var _class, _temp;
@@ -2296,8 +2299,8 @@ module.exports = (_temp = _class = /*#__PURE__*/function () {
   }]);
 
   return RequestClient;
-}(), _class.VERSION = "1.10.1", _temp);
-},{"./AuthError":8,"@uppy/utils/lib/fetchWithNetworkError":28}],11:[function(require,module,exports){
+}(), _class.VERSION = "1.10.2", _temp);
+},{"./AuthError":8,"@uppy/utils/lib/fetchWithNetworkError":33}],11:[function(require,module,exports){
 'use strict';
 
 function _inheritsLoose(subClass, superClass) { subClass.prototype = Object.create(superClass.prototype); subClass.prototype.constructor = subClass; _setPrototypeOf(subClass, superClass); }
@@ -2432,7 +2435,7 @@ module.exports = /*#__PURE__*/function () {
 
   return UppySocket;
 }();
-},{"namespace-emitter":49}],13:[function(require,module,exports){
+},{"namespace-emitter":54}],13:[function(require,module,exports){
 'use strict';
 /**
  * Manages communications with Companion
@@ -2677,7 +2680,7 @@ module.exports = /*#__PURE__*/function () {
 
   return Plugin;
 }();
-},{"@uppy/utils/lib/findDOMElement":29,"preact":50}],16:[function(require,module,exports){
+},{"@uppy/utils/lib/findDOMElement":34,"preact":55}],16:[function(require,module,exports){
 function _extends() { _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
 
 function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
@@ -2727,7 +2730,10 @@ var _require = require('./loggers'),
     justErrorsLogger = _require.justErrorsLogger,
     debugLogger = _require.debugLogger;
 
-var Plugin = require('./Plugin'); // Exported from here.
+var Plugin = require('./Plugin');
+
+var _require2 = require('../package.json'),
+    version = _require2.version; // Exported from here.
 
 
 var RestrictionError = /*#__PURE__*/function (_Error) {
@@ -2783,7 +2789,7 @@ var Uppy = /*#__PURE__*/function () {
         // substitution.
         // TODO: In 2.0 `exceedsSize2` should be removed in and `exceedsSize` updated to use substitution.
         exceedsSize2: '%{backwardsCompat} %{size}',
-        exceedsSize: 'This file exceeds maximum allowed size of',
+        exceedsSize: '%{file} exceeds maximum allowed size of',
         inferiorSize: 'This file is smaller than the allowed size of %{size}',
         youCanOnlyUploadFileTypes: 'You can only upload: %{types}',
         noNewAlreadyUploading: 'Cannot add new files: already uploading',
@@ -2835,7 +2841,7 @@ var Uppy = /*#__PURE__*/function () {
         allowedFileTypes: null
       },
       meta: {},
-      onBeforeFileAdded: function onBeforeFileAdded(currentFile, files) {
+      onBeforeFileAdded: function onBeforeFileAdded(currentFile) {
         return currentFile;
       },
       onBeforeUpload: function onBeforeUpload(files) {
@@ -2878,12 +2884,14 @@ var Uppy = /*#__PURE__*/function () {
     this.removeFile = this.removeFile.bind(this);
     this.pauseResume = this.pauseResume.bind(this);
     this.validateRestrictions = this.validateRestrictions.bind(this); // ___Why throttle at 500ms?
-    //    - We must throttle at >250ms for superfocus in Dashboard to work well (because animation takes 0.25s, and we want to wait for all animations to be over before refocusing).
-    //    [Practical Check]: if thottle is at 100ms, then if you are uploading a file, and click 'ADD MORE FILES', - focus won't activate in Firefox.
+    //    - We must throttle at >250ms for superfocus in Dashboard to work well
+    //    (because animation takes 0.25s, and we want to wait for all animations to be over before refocusing).
+    //    [Practical Check]: if thottle is at 100ms, then if you are uploading a file,
+    //    and click 'ADD MORE FILES', - focus won't activate in Firefox.
     //    - We must throttle at around >500ms to avoid performance lags.
     //    [Practical Check] Firefox, try to upload a big file for a prolonged period of time. Laptop will start to heat up.
 
-    this._calculateProgress = throttle(this._calculateProgress.bind(this), 500, {
+    this.calculateProgress = throttle(this.calculateProgress.bind(this), 500, {
       leading: true,
       trailing: true
     });
@@ -2923,7 +2931,7 @@ var Uppy = /*#__PURE__*/function () {
       },
       recoveredState: null
     });
-    this._storeUnsubscribe = this.store.subscribe(function (prevState, nextState, patch) {
+    this.storeUnsubscribe = this.store.subscribe(function (prevState, nextState, patch) {
       _this2.emit('state-update', prevState, nextState, patch);
 
       _this2.updateAll(nextState);
@@ -2933,9 +2941,8 @@ var Uppy = /*#__PURE__*/function () {
       window[this.opts.id] = this;
     }
 
-    this._addListeners(); // Re-enable if we’ll need some capabilities on boot, like isMobileDevice
+    this.addListeners(); // Re-enable if we’ll need some capabilities on boot, like isMobileDevice
     // this._setCapabilities()
-
   } // _setCapabilities = () => {
   //   const capabilities = {
   //     isMobileDevice: isMobileDevice()
@@ -3032,7 +3039,8 @@ var Uppy = /*#__PURE__*/function () {
       this.iteratePlugins(function (plugin) {
         plugin.setOptions();
       });
-    }
+    } // Note: this is not the preact `setState`, it's an internal function that has the same name.
+
 
     this.setState(); // so that UI re-renders with new options
   };
@@ -3167,8 +3175,7 @@ var Uppy = /*#__PURE__*/function () {
 
   _proto.validateRestrictions = function validateRestrictions(file, files) {
     try {
-      this._checkRestrictions(file, files);
-
+      this.checkRestrictions(file, files);
       return {
         result: true
       };
@@ -3189,7 +3196,7 @@ var Uppy = /*#__PURE__*/function () {
    */
   ;
 
-  _proto._checkRestrictions = function _checkRestrictions(file, files) {
+  _proto.checkRestrictions = function checkRestrictions(file, files) {
     if (files === void 0) {
       files = this.getFiles();
     }
@@ -3237,14 +3244,15 @@ var Uppy = /*#__PURE__*/function () {
     if (maxTotalFileSize && file.size != null) {
       var totalFilesSize = 0;
       totalFilesSize += file.size;
-      files.forEach(function (file) {
-        totalFilesSize += file.size;
+      files.forEach(function (f) {
+        totalFilesSize += f.size;
       });
 
       if (totalFilesSize > maxTotalFileSize) {
         throw new RestrictionError(this.i18n('exceedsSize2', {
           backwardsCompat: this.i18n('exceedsSize'),
-          size: prettierBytes(maxTotalFileSize)
+          size: prettierBytes(maxTotalFileSize),
+          file: file.name
         }));
       }
     } // We can't check maxFileSize if the size is unknown.
@@ -3254,7 +3262,8 @@ var Uppy = /*#__PURE__*/function () {
       if (file.size > maxFileSize) {
         throw new RestrictionError(this.i18n('exceedsSize2', {
           backwardsCompat: this.i18n('exceedsSize'),
-          size: prettierBytes(maxFileSize)
+          size: prettierBytes(maxFileSize),
+          file: file.name
         }));
       }
     } // We can't check minFileSize if the size is unknown.
@@ -3275,7 +3284,7 @@ var Uppy = /*#__PURE__*/function () {
    */
   ;
 
-  _proto._checkMinNumberOfFiles = function _checkMinNumberOfFiles(files) {
+  _proto.checkMinNumberOfFiles = function checkMinNumberOfFiles(files) {
     var minNumberOfFiles = this.opts.restrictions.minNumberOfFiles;
 
     if (Object.keys(files).length < minNumberOfFiles) {
@@ -3297,7 +3306,7 @@ var Uppy = /*#__PURE__*/function () {
    */
   ;
 
-  _proto._showOrLogErrorAndThrow = function _showOrLogErrorAndThrow(err, _temp) {
+  _proto.showOrLogErrorAndThrow = function showOrLogErrorAndThrow(err, _temp) {
     var _ref = _temp === void 0 ? {} : _temp,
         _ref$showInformer = _ref.showInformer,
         showInformer = _ref$showInformer === void 0 ? true : _ref$showInformer,
@@ -3337,12 +3346,12 @@ var Uppy = /*#__PURE__*/function () {
     }
   };
 
-  _proto._assertNewUploadAllowed = function _assertNewUploadAllowed(file) {
+  _proto.assertNewUploadAllowed = function assertNewUploadAllowed(file) {
     var _this$getState2 = this.getState(),
         allowNewUpload = _this$getState2.allowNewUpload;
 
     if (allowNewUpload === false) {
-      this._showOrLogErrorAndThrow(new RestrictionError(this.i18n('noNewAlreadyUploading')), {
+      this.showOrLogErrorAndThrow(new RestrictionError(this.i18n('noNewAlreadyUploading')), {
         file: file
       });
     }
@@ -3356,14 +3365,15 @@ var Uppy = /*#__PURE__*/function () {
    */
   ;
 
-  _proto._checkAndCreateFileStateObject = function _checkAndCreateFileStateObject(files, file) {
-    var fileType = getFileType(file);
+  _proto.checkAndCreateFileStateObject = function checkAndCreateFileStateObject(files, f) {
+    var fileType = getFileType(f);
+    var file = f;
     file.type = fileType;
     var onBeforeFileAddedResult = this.opts.onBeforeFileAdded(file, files);
 
     if (onBeforeFileAddedResult === false) {
       // Don’t show UI info for this error, as it should be done by the developer
-      this._showOrLogErrorAndThrow(new RestrictionError('Cannot add the file because onBeforeFileAdded returned false.'), {
+      this.showOrLogErrorAndThrow(new RestrictionError('Cannot add the file because onBeforeFileAdded returned false.'), {
         showInformer: false,
         file: file
       });
@@ -3388,7 +3398,7 @@ var Uppy = /*#__PURE__*/function () {
     var fileID = generateFileID(file);
 
     if (files[fileID] && !files[fileID].isGhost) {
-      this._showOrLogErrorAndThrow(new RestrictionError(this.i18n('noDuplicates', {
+      this.showOrLogErrorAndThrow(new RestrictionError(this.i18n('noDuplicates', {
         fileName: fileName
       })), {
         file: file
@@ -3399,7 +3409,7 @@ var Uppy = /*#__PURE__*/function () {
     meta.name = fileName;
     meta.type = fileType; // `null` means the size is unknown.
 
-    var size = isFinite(file.data.size) ? file.data.size : null;
+    var size = Number.isFinite(file.data.size) ? file.data.size : null;
     var newFile = {
       source: file.source || '',
       id: fileID,
@@ -3425,10 +3435,9 @@ var Uppy = /*#__PURE__*/function () {
       var filesArray = Object.keys(files).map(function (i) {
         return files[i];
       });
-
-      this._checkRestrictions(newFile, filesArray);
+      this.checkRestrictions(newFile, filesArray);
     } catch (err) {
-      this._showOrLogErrorAndThrow(err, {
+      this.showOrLogErrorAndThrow(err, {
         file: newFile
       });
     }
@@ -3437,7 +3446,7 @@ var Uppy = /*#__PURE__*/function () {
   } // Schedule an upload if `autoProceed` is enabled.
   ;
 
-  _proto._startIfAutoProceed = function _startIfAutoProceed() {
+  _proto.startIfAutoProceed = function startIfAutoProceed() {
     var _this3 = this;
 
     if (this.opts.autoProceed && !this.scheduledAutoProceed) {
@@ -3465,14 +3474,13 @@ var Uppy = /*#__PURE__*/function () {
   _proto.addFile = function addFile(file) {
     var _extends3;
 
-    this._assertNewUploadAllowed(file);
+    this.assertNewUploadAllowed(file);
 
     var _this$getState3 = this.getState(),
         files = _this$getState3.files;
 
-    var newFile = this._checkAndCreateFileStateObject(files, file); // Users are asked to re-select recovered files without data,
+    var newFile = this.checkAndCreateFileStateObject(files, file); // Users are asked to re-select recovered files without data,
     // and to keep the progress, meta and everthing else, we only replace said data
-
 
     if (files[newFile.id] && files[newFile.id].isGhost) {
       newFile = _extends({}, files[newFile.id], {
@@ -3488,9 +3496,7 @@ var Uppy = /*#__PURE__*/function () {
     this.emit('file-added', newFile);
     this.emit('files-added', [newFile]);
     this.log("Added file: " + newFile.name + ", " + newFile.id + ", mime type: " + newFile.type);
-
-    this._startIfAutoProceed();
-
+    this.startIfAutoProceed();
     return newFile.id;
   }
   /**
@@ -3505,8 +3511,7 @@ var Uppy = /*#__PURE__*/function () {
   _proto.addFiles = function addFiles(fileDescriptors) {
     var _this4 = this;
 
-    this._assertNewUploadAllowed(); // create a copy of the files object only once
-
+    this.assertNewUploadAllowed(); // create a copy of the files object only once
 
     var files = _extends({}, this.getState().files);
 
@@ -3515,9 +3520,8 @@ var Uppy = /*#__PURE__*/function () {
 
     for (var i = 0; i < fileDescriptors.length; i++) {
       try {
-        var newFile = this._checkAndCreateFileStateObject(files, fileDescriptors[i]); // Users are asked to re-select recovered files without data,
+        var newFile = this.checkAndCreateFileStateObject(files, fileDescriptors[i]); // Users are asked to re-select recovered files without data,
         // and to keep the progress, meta and everthing else, we only replace said data
-
 
         if (files[newFile.id] && files[newFile.id].isGhost) {
           newFile = _extends({}, files[newFile.id], {
@@ -3553,7 +3557,7 @@ var Uppy = /*#__PURE__*/function () {
     }
 
     if (newFiles.length > 0) {
-      this._startIfAutoProceed();
+      this.startIfAutoProceed();
     }
 
     if (errors.length > 0) {
@@ -3626,9 +3630,7 @@ var Uppy = /*#__PURE__*/function () {
     }
 
     this.setState(stateUpdate);
-
-    this._calculateTotalProgress();
-
+    this.calculateTotalProgress();
     var removedFileIDs = Object.keys(removedFiles);
     removedFileIDs.forEach(function (fileID) {
       _this5.emit('file-removed', removedFiles[fileID], reason);
@@ -3651,7 +3653,7 @@ var Uppy = /*#__PURE__*/function () {
 
   _proto.pauseResume = function pauseResume(fileID) {
     if (!this.getState().capabilities.resumableUploads || this.getFile(fileID).uploadComplete) {
-      return;
+      return undefined;
     }
 
     var wasPaused = this.getFile(fileID).isPaused || false;
@@ -3729,12 +3731,11 @@ var Uppy = /*#__PURE__*/function () {
       });
     }
 
-    var uploadID = this._createUpload(filesToRetry, {
+    var uploadID = this.createUpload(filesToRetry, {
       forceAllowNewUpload: true // create new upload even if allowNewUpload: false
 
     });
-
-    return this._runUpload(uploadID);
+    return this.runUpload(uploadID);
   };
 
   _proto.cancelAll = function cancelAll() {
@@ -3762,13 +3763,11 @@ var Uppy = /*#__PURE__*/function () {
       isPaused: false
     });
     this.emit('upload-retry', fileID);
-
-    var uploadID = this._createUpload([fileID], {
+    var uploadID = this.createUpload([fileID], {
       forceAllowNewUpload: true // create new upload even if allowNewUpload: false
 
     });
-
-    return this._runUpload(uploadID);
+    return this.runUpload(uploadID);
   };
 
   _proto.reset = function reset() {
@@ -3783,14 +3782,14 @@ var Uppy = /*#__PURE__*/function () {
     });
   };
 
-  _proto._calculateProgress = function _calculateProgress(file, data) {
+  _proto.calculateProgress = function calculateProgress(file, data) {
     if (!this.getFile(file.id)) {
       this.log("Not setting progress for a file that has been removed: " + file.id);
       return;
     } // bytesTotal may be null or zero; in that case we can't divide by it
 
 
-    var canHavePercentage = isFinite(data.bytesTotal) && data.bytesTotal > 0;
+    var canHavePercentage = Number.isFinite(data.bytesTotal) && data.bytesTotal > 0;
     this.setFileState(file.id, {
       progress: _extends({}, this.getFile(file.id).progress, {
         bytesUploaded: data.bytesUploaded,
@@ -3800,11 +3799,10 @@ var Uppy = /*#__PURE__*/function () {
         ? Math.round(data.bytesUploaded / data.bytesTotal * 100) : 0
       })
     });
-
-    this._calculateTotalProgress();
+    this.calculateTotalProgress();
   };
 
-  _proto._calculateTotalProgress = function _calculateTotalProgress() {
+  _proto.calculateTotalProgress = function calculateTotalProgress() {
     // calculate total progress, using the number of files currently uploading,
     // multiplied by 100 and the summ of individual progress of each file
     var files = this.getFiles();
@@ -3871,15 +3869,16 @@ var Uppy = /*#__PURE__*/function () {
    */
   ;
 
-  _proto._addListeners = function _addListeners() {
+  _proto.addListeners = function addListeners() {
     var _this6 = this;
 
-    this.on('error', function (error) {
-      var errorMsg = 'Unknown error';
-
-      if (error.message) {
-        errorMsg = error.message;
-      }
+    /**
+     * @param {Error} error
+     * @param {object} [file]
+     * @param {object} [response]
+     */
+    var errorHandler = function errorHandler(error, file, response) {
+      var errorMsg = error.message || 'Unknown error';
 
       if (error.details) {
         errorMsg += " " + error.details;
@@ -3888,26 +3887,18 @@ var Uppy = /*#__PURE__*/function () {
       _this6.setState({
         error: errorMsg
       });
-    });
+
+      if (file != null) {
+        _this6.setFileState(file.id, {
+          error: errorMsg,
+          response: response
+        });
+      }
+    };
+
+    this.on('error', errorHandler);
     this.on('upload-error', function (file, error, response) {
-      var errorMsg = 'Unknown error';
-
-      if (error.message) {
-        errorMsg = error.message;
-      }
-
-      if (error.details) {
-        errorMsg += " " + error.details;
-      }
-
-      _this6.setFileState(file.id, {
-        error: errorMsg,
-        response: response
-      });
-
-      _this6.setState({
-        error: error.message
-      });
+      errorHandler(error, file, response);
 
       if (typeof error === 'object' && error.message) {
         var newError = new Error(error.message);
@@ -3921,11 +3912,11 @@ var Uppy = /*#__PURE__*/function () {
           file: file.name
         });
 
-        _this6._showOrLogErrorAndThrow(newError, {
+        _this6.showOrLogErrorAndThrow(newError, {
           throwErr: false
         });
       } else {
-        _this6._showOrLogErrorAndThrow(error, {
+        _this6.showOrLogErrorAndThrow(error, {
           throwErr: false
         });
       }
@@ -3935,7 +3926,7 @@ var Uppy = /*#__PURE__*/function () {
         error: null
       });
     });
-    this.on('upload-started', function (file, upload) {
+    this.on('upload-started', function (file) {
       if (!_this6.getFile(file.id)) {
         _this6.log("Not setting progress for a file that has been removed: " + file.id);
 
@@ -3952,7 +3943,7 @@ var Uppy = /*#__PURE__*/function () {
         }
       });
     });
-    this.on('upload-progress', this._calculateProgress);
+    this.on('upload-progress', this.calculateProgress);
     this.on('upload-success', function (file, uploadResp) {
       if (!_this6.getFile(file.id)) {
         _this6.log("Not setting progress for a file that has been removed: " + file.id);
@@ -3976,7 +3967,7 @@ var Uppy = /*#__PURE__*/function () {
         isPaused: false
       });
 
-      _this6._calculateTotalProgress();
+      _this6.calculateTotalProgress();
     });
     this.on('preprocess-progress', function (file, progress) {
       if (!_this6.getFile(file.id)) {
@@ -4044,7 +4035,7 @@ var Uppy = /*#__PURE__*/function () {
     });
     this.on('restored', function () {
       // Files may have changed--ensure progress is still accurate.
-      _this6._calculateTotalProgress();
+      _this6.calculateTotalProgress();
     }); // show informer if offline
 
     if (typeof window !== 'undefined' && window.addEventListener) {
@@ -4088,6 +4079,7 @@ var Uppy = /*#__PURE__*/function () {
    * @param {object} [opts] object with options to be passed to Plugin
    * @returns {object} self for chaining
    */
+  // eslint-disable-next-line no-shadow
   ;
 
   _proto.use = function use(Plugin, opts) {
@@ -4203,9 +4195,7 @@ var Uppy = /*#__PURE__*/function () {
 
     this.log("Closing Uppy instance " + this.opts.id + ": removing all files and uninstalling plugins");
     this.reset();
-
-    this._storeUnsubscribe();
-
+    this.storeUnsubscribe();
     this.iteratePlugins(function (plugin) {
       _this8.removePlugin(plugin);
     });
@@ -4304,12 +4294,11 @@ var Uppy = /*#__PURE__*/function () {
     this.log("Core: attempting to restore upload \"" + uploadID + "\"");
 
     if (!this.getState().currentUploads[uploadID]) {
-      this._removeUpload(uploadID);
-
+      this.removeUpload(uploadID);
       return Promise.reject(new Error('Nonexistent upload'));
     }
 
-    return this._runUpload(uploadID);
+    return this.runUpload(uploadID);
   }
   /**
    * Create an upload for a bunch of files.
@@ -4319,13 +4308,14 @@ var Uppy = /*#__PURE__*/function () {
    */
   ;
 
-  _proto._createUpload = function _createUpload(fileIDs, opts) {
+  _proto.createUpload = function createUpload(fileIDs, opts) {
     var _extends5;
 
     if (opts === void 0) {
       opts = {};
     }
 
+    // uppy.retryAll sets this to true — when retrying we want to ignore `allowNewUpload: false`
     var _opts = opts,
         _opts$forceAllowNewUp = _opts.forceAllowNewUpload,
         forceAllowNewUpload = _opts$forceAllowNewUp === void 0 ? false : _opts$forceAllowNewUp;
@@ -4354,7 +4344,7 @@ var Uppy = /*#__PURE__*/function () {
     return uploadID;
   };
 
-  _proto._getUpload = function _getUpload(uploadID) {
+  _proto.getUpload = function getUpload(uploadID) {
     var _this$getState7 = this.getState(),
         currentUploads = _this$getState7.currentUploads;
 
@@ -4371,12 +4361,13 @@ var Uppy = /*#__PURE__*/function () {
   _proto.addResultData = function addResultData(uploadID, data) {
     var _extends6;
 
-    if (!this._getUpload(uploadID)) {
+    if (!this.getUpload(uploadID)) {
       this.log("Not setting result for an upload that has been removed: " + uploadID);
       return;
     }
 
-    var currentUploads = this.getState().currentUploads;
+    var _this$getState8 = this.getState(),
+        currentUploads = _this$getState8.currentUploads;
 
     var currentUpload = _extends({}, currentUploads[uploadID], {
       result: _extends({}, currentUploads[uploadID].result, data)
@@ -4393,7 +4384,7 @@ var Uppy = /*#__PURE__*/function () {
    */
   ;
 
-  _proto._removeUpload = function _removeUpload(uploadID) {
+  _proto.removeUpload = function removeUpload(uploadID) {
     var currentUploads = _extends({}, this.getState().currentUploads);
 
     delete currentUploads[uploadID];
@@ -4408,7 +4399,7 @@ var Uppy = /*#__PURE__*/function () {
    */
   ;
 
-  _proto._runUpload = function _runUpload(uploadID) {
+  _proto.runUpload = function runUpload(uploadID) {
     var _this9 = this;
 
     var uploadData = this.getState().currentUploads[uploadID];
@@ -4441,10 +4432,11 @@ var Uppy = /*#__PURE__*/function () {
           currentUploads: _extends({}, currentUploads, (_extends7 = {}, _extends7[uploadID] = updatedUpload, _extends7))
         }); // TODO give this the `updatedUpload` object as its only parameter maybe?
         // Otherwise when more metadata may be added to the upload this would keep getting more parameters
+        // eslint-disable-next-line consistent-return
 
 
         return fn(updatedUpload.fileIDs, uploadID);
-      }).then(function (result) {
+      }).then(function () {
         return null;
       });
     }); // Not returning the `catch`ed promise, because we still want to return a rejected
@@ -4453,7 +4445,7 @@ var Uppy = /*#__PURE__*/function () {
     lastStep.catch(function (err) {
       _this9.emit('error', err, uploadID);
 
-      _this9._removeUpload(uploadID);
+      _this9.removeUpload(uploadID);
     });
     return lastStep.then(function () {
       // Set result data.
@@ -4515,7 +4507,8 @@ var Uppy = /*#__PURE__*/function () {
 
       _this9.emit('complete', result);
 
-      _this9._removeUpload(uploadID);
+      _this9.removeUpload(uploadID); // eslint-disable-next-line consistent-return
+
 
       return result;
     }).then(function (result) {
@@ -4540,7 +4533,9 @@ var Uppy = /*#__PURE__*/function () {
       this.log('No uploader type plugins are used', 'warning');
     }
 
-    var files = this.getState().files;
+    var _this$getState9 = this.getState(),
+        files = _this$getState9.files;
+
     var onBeforeUploadResult = this.opts.onBeforeUpload(files);
 
     if (onBeforeUploadResult === false) {
@@ -4557,9 +4552,9 @@ var Uppy = /*#__PURE__*/function () {
     }
 
     return Promise.resolve().then(function () {
-      return _this10._checkMinNumberOfFiles(files);
+      return _this10.checkMinNumberOfFiles(files);
     }).catch(function (err) {
-      _this10._showOrLogErrorAndThrow(err);
+      _this10.showOrLogErrorAndThrow(err);
     }).then(function () {
       var _this10$getState = _this10.getState(),
           currentUploads = _this10$getState.currentUploads; // get a list of files that are currently assigned to uploads
@@ -4578,11 +4573,11 @@ var Uppy = /*#__PURE__*/function () {
         }
       });
 
-      var uploadID = _this10._createUpload(waitingFileIDs);
+      var uploadID = _this10.createUpload(waitingFileIDs);
 
-      return _this10._runUpload(uploadID);
+      return _this10.runUpload(uploadID);
     }).catch(function (err) {
-      _this10._showOrLogErrorAndThrow(err, {
+      _this10.showOrLogErrorAndThrow(err, {
         showInformer: false
       });
     });
@@ -4598,9 +4593,9 @@ var Uppy = /*#__PURE__*/function () {
   return Uppy;
 }();
 
-Uppy.VERSION = "1.19.1";
+Uppy.VERSION = version;
 
-module.exports = function (opts) {
+module.exports = function core(opts) {
   return new Uppy(opts);
 }; // Expose class constructor.
 
@@ -4608,7 +4603,7 @@ module.exports = function (opts) {
 module.exports.Uppy = Uppy;
 module.exports.Plugin = Plugin;
 module.exports.debugLogger = debugLogger;
-},{"./Plugin":15,"./loggers":17,"./supportsUploadProgress":18,"@transloadit/prettier-bytes":2,"@uppy/store-default":19,"@uppy/utils/lib/Translator":25,"@uppy/utils/lib/findIndex":30,"@uppy/utils/lib/generateFileID":31,"@uppy/utils/lib/getFileNameAndExtension":32,"@uppy/utils/lib/getFileType":33,"cuid":43,"lodash.throttle":47,"mime-match":48,"namespace-emitter":49}],17:[function(require,module,exports){
+},{"../package.json":19,"./Plugin":15,"./loggers":17,"./supportsUploadProgress":18,"@transloadit/prettier-bytes":2,"@uppy/store-default":24,"@uppy/utils/lib/Translator":30,"@uppy/utils/lib/findIndex":35,"@uppy/utils/lib/generateFileID":36,"@uppy/utils/lib/getFileNameAndExtension":37,"@uppy/utils/lib/getFileType":38,"cuid":48,"lodash.throttle":52,"mime-match":53,"namespace-emitter":54}],17:[function(require,module,exports){
 var getTimeStamp = require('@uppy/utils/lib/getTimeStamp'); // Swallow all logs, except errors.
 // default if logger is not set or debug: false
 
@@ -4662,7 +4657,7 @@ module.exports = {
   justErrorsLogger: justErrorsLogger,
   debugLogger: debugLogger
 };
-},{"@uppy/utils/lib/getTimeStamp":35}],18:[function(require,module,exports){
+},{"@uppy/utils/lib/getTimeStamp":40}],18:[function(require,module,exports){
 // Edge 15.x does not fire 'progress' events on uploads.
 // See https://github.com/transloadit/uppy/issues/945
 // And https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/12224510/
@@ -4701,6 +4696,951 @@ module.exports = function supportsUploadProgress(userAgent) {
   return false;
 };
 },{}],19:[function(require,module,exports){
+module.exports={
+  "name": "@uppy/core",
+  "description": "Core module for the extensible JavaScript file upload widget with support for drag&drop, resumable uploads, previews, restrictions, file processing/encoding, remote providers like Instagram, Dropbox, Google Drive, S3 and more :dog:",
+  "version": "1.19.2",
+  "license": "MIT",
+  "main": "lib/index.js",
+  "style": "dist/style.min.css",
+  "types": "types/index.d.ts",
+  "keywords": [
+    "file uploader",
+    "uppy",
+    "uppy-plugin"
+  ],
+  "homepage": "https://uppy.io",
+  "bugs": {
+    "url": "https://github.com/transloadit/uppy/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/transloadit/uppy.git"
+  },
+  "dependencies": {
+    "@transloadit/prettier-bytes": "0.0.7",
+    "@uppy/store-default": "^1.2.7",
+    "@uppy/utils": "^3.6.2",
+    "cuid": "^2.1.1",
+    "lodash.throttle": "^4.1.1",
+    "mime-match": "^1.0.2",
+    "namespace-emitter": "^2.0.1",
+    "preact": "8.2.9"
+  },
+  "gitHead": "4b782ffbbb443672843d7b4096956bed3b11d612"
+}
+
+},{}],20:[function(require,module,exports){
+function _extends() { _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
+
+var prettierBytes = require('@transloadit/prettier-bytes');
+
+var indexedDB = typeof window !== 'undefined' && (window.indexedDB || window.webkitIndexedDB || window.mozIndexedDB || window.OIndexedDB || window.msIndexedDB);
+var isSupported = !!indexedDB;
+var DB_NAME = 'uppy-blobs';
+var STORE_NAME = 'files'; // maybe have a thumbnail store in the future
+
+var DEFAULT_EXPIRY = 24 * 60 * 60 * 1000; // 24 hours
+
+var DB_VERSION = 3; // Set default `expires` dates on existing stored blobs.
+
+function migrateExpiration(store) {
+  var request = store.openCursor();
+
+  request.onsuccess = function (event) {
+    var cursor = event.target.result;
+
+    if (!cursor) {
+      return;
+    }
+
+    var entry = cursor.value;
+    entry.expires = Date.now() + DEFAULT_EXPIRY;
+    cursor.update(entry);
+  };
+}
+
+function connect(dbName) {
+  var request = indexedDB.open(dbName, DB_VERSION);
+  return new Promise(function (resolve, reject) {
+    request.onupgradeneeded = function (event) {
+      var db = event.target.result;
+      var transaction = event.currentTarget.transaction;
+
+      if (event.oldVersion < 2) {
+        // Added in v2: DB structure changed to a single shared object store
+        var store = db.createObjectStore(STORE_NAME, {
+          keyPath: 'id'
+        });
+        store.createIndex('store', 'store', {
+          unique: false
+        });
+      }
+
+      if (event.oldVersion < 3) {
+        // Added in v3
+        var _store = transaction.objectStore(STORE_NAME);
+
+        _store.createIndex('expires', 'expires', {
+          unique: false
+        });
+
+        migrateExpiration(_store);
+      }
+
+      transaction.oncomplete = function () {
+        resolve(db);
+      };
+    };
+
+    request.onsuccess = function (event) {
+      resolve(event.target.result);
+    };
+
+    request.onerror = reject;
+  });
+}
+
+function waitForRequest(request) {
+  return new Promise(function (resolve, reject) {
+    request.onsuccess = function (event) {
+      resolve(event.target.result);
+    };
+
+    request.onerror = reject;
+  });
+}
+
+var cleanedUp = false;
+
+var IndexedDBStore = /*#__PURE__*/function () {
+  function IndexedDBStore(opts) {
+    var _this = this;
+
+    this.opts = _extends({
+      dbName: DB_NAME,
+      storeName: 'default',
+      expires: DEFAULT_EXPIRY,
+      // 24 hours
+      maxFileSize: 10 * 1024 * 1024,
+      // 10 MB
+      maxTotalSize: 300 * 1024 * 1024
+    }, opts);
+    this.name = this.opts.storeName;
+
+    var createConnection = function createConnection() {
+      return connect(_this.opts.dbName);
+    };
+
+    if (!cleanedUp) {
+      cleanedUp = true;
+      this.ready = IndexedDBStore.cleanup().then(createConnection, createConnection);
+    } else {
+      this.ready = createConnection();
+    }
+  }
+
+  var _proto = IndexedDBStore.prototype;
+
+  _proto.key = function key(fileID) {
+    return this.name + "!" + fileID;
+  }
+  /**
+   * List all file blobs currently in the store.
+   */
+  ;
+
+  _proto.list = function list() {
+    var _this2 = this;
+
+    return this.ready.then(function (db) {
+      var transaction = db.transaction([STORE_NAME], 'readonly');
+      var store = transaction.objectStore(STORE_NAME);
+      var request = store.index('store').getAll(IDBKeyRange.only(_this2.name));
+      return waitForRequest(request);
+    }).then(function (files) {
+      var result = {};
+      files.forEach(function (file) {
+        result[file.fileID] = file.data;
+      });
+      return result;
+    });
+  }
+  /**
+   * Get one file blob from the store.
+   */
+  ;
+
+  _proto.get = function get(fileID) {
+    var _this3 = this;
+
+    return this.ready.then(function (db) {
+      var transaction = db.transaction([STORE_NAME], 'readonly');
+      var request = transaction.objectStore(STORE_NAME).get(_this3.key(fileID));
+      return waitForRequest(request);
+    }).then(function (result) {
+      return {
+        id: result.data.fileID,
+        data: result.data.data
+      };
+    });
+  }
+  /**
+   * Get the total size of all stored files.
+   *
+   * @private
+   */
+  ;
+
+  _proto.getSize = function getSize() {
+    var _this4 = this;
+
+    return this.ready.then(function (db) {
+      var transaction = db.transaction([STORE_NAME], 'readonly');
+      var store = transaction.objectStore(STORE_NAME);
+      var request = store.index('store').openCursor(IDBKeyRange.only(_this4.name));
+      return new Promise(function (resolve, reject) {
+        var size = 0;
+
+        request.onsuccess = function (event) {
+          var cursor = event.target.result;
+
+          if (cursor) {
+            size += cursor.value.data.size;
+            cursor.continue();
+          } else {
+            resolve(size);
+          }
+        };
+
+        request.onerror = function () {
+          reject(new Error('Could not retrieve stored blobs size'));
+        };
+      });
+    });
+  }
+  /**
+   * Save a file in the store.
+   */
+  ;
+
+  _proto.put = function put(file) {
+    var _this5 = this;
+
+    if (file.data.size > this.opts.maxFileSize) {
+      return Promise.reject(new Error('File is too big to store.'));
+    }
+
+    return this.getSize().then(function (size) {
+      if (size > _this5.opts.maxTotalSize) {
+        return Promise.reject(new Error('No space left'));
+      }
+
+      return _this5.ready;
+    }).then(function (db) {
+      var transaction = db.transaction([STORE_NAME], 'readwrite');
+      var request = transaction.objectStore(STORE_NAME).add({
+        id: _this5.key(file.id),
+        fileID: file.id,
+        store: _this5.name,
+        expires: Date.now() + _this5.opts.expires,
+        data: file.data
+      });
+      return waitForRequest(request);
+    });
+  }
+  /**
+   * Delete a file blob from the store.
+   */
+  ;
+
+  _proto.delete = function _delete(fileID) {
+    var _this6 = this;
+
+    return this.ready.then(function (db) {
+      var transaction = db.transaction([STORE_NAME], 'readwrite');
+      var request = transaction.objectStore(STORE_NAME).delete(_this6.key(fileID));
+      return waitForRequest(request);
+    });
+  }
+  /**
+   * Delete all stored blobs that have an expiry date that is before Date.now().
+   * This is a static method because it deletes expired blobs from _all_ Uppy instances.
+   */
+  ;
+
+  IndexedDBStore.cleanup = function cleanup() {
+    return connect(DB_NAME).then(function (db) {
+      var transaction = db.transaction([STORE_NAME], 'readwrite');
+      var store = transaction.objectStore(STORE_NAME);
+      var request = store.index('expires').openCursor(IDBKeyRange.upperBound(Date.now()));
+      return new Promise(function (resolve, reject) {
+        request.onsuccess = function (event) {
+          var cursor = event.target.result;
+
+          if (cursor) {
+            var entry = cursor.value;
+            console.log('[IndexedDBStore] Deleting record', entry.fileID, 'of size', prettierBytes(entry.data.size), '- expired on', new Date(entry.expires));
+            cursor.delete(); // Ignoring return value … it's not terrible if this goes wrong.
+
+            cursor.continue();
+          } else {
+            resolve(db);
+          }
+        };
+
+        request.onerror = reject;
+      });
+    }).then(function (db) {
+      db.close();
+    });
+  };
+
+  return IndexedDBStore;
+}();
+
+IndexedDBStore.isSupported = isSupported;
+module.exports = IndexedDBStore;
+},{"@transloadit/prettier-bytes":2}],21:[function(require,module,exports){
+function _extends() { _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
+
+/**
+ * Get uppy instance IDs for which state is stored.
+ */
+function findUppyInstances() {
+  var instances = [];
+
+  for (var i = 0; i < localStorage.length; i++) {
+    var key = localStorage.key(i);
+
+    if (/^uppyState:/.test(key)) {
+      instances.push(key.slice('uppyState:'.length));
+    }
+  }
+
+  return instances;
+}
+/**
+ * Try to JSON-parse a string, return null on failure.
+ */
+
+
+function maybeParse(str) {
+  try {
+    return JSON.parse(str);
+  } catch (err) {
+    return null;
+  }
+}
+
+var cleanedUp = false;
+
+module.exports = /*#__PURE__*/function () {
+  function MetaDataStore(opts) {
+    this.opts = _extends({
+      expires: 24 * 60 * 60 * 1000
+    }, opts);
+    this.name = "uppyState:" + opts.storeName;
+
+    if (!cleanedUp) {
+      cleanedUp = true;
+      MetaDataStore.cleanup();
+    }
+  }
+  /**
+   *
+   */
+
+
+  var _proto = MetaDataStore.prototype;
+
+  _proto.load = function load() {
+    var savedState = localStorage.getItem(this.name);
+    if (!savedState) return null;
+    var data = maybeParse(savedState);
+    if (!data) return null; // Upgrade pre-0.20.0 uppyState: it used to be just a flat object,
+    // without `expires`.
+
+    if (!data.metadata) {
+      this.save(data);
+      return data;
+    }
+
+    return data.metadata;
+  };
+
+  _proto.save = function save(metadata) {
+    var expires = Date.now() + this.opts.expires;
+    var state = JSON.stringify({
+      metadata: metadata,
+      expires: expires
+    });
+    localStorage.setItem(this.name, state);
+  }
+  /**
+   * Remove all expired state.
+   */
+  ;
+
+  MetaDataStore.cleanup = function cleanup(instanceID) {
+    if (instanceID) {
+      localStorage.removeItem("uppyState:" + instanceID);
+      return;
+    }
+
+    var instanceIDs = findUppyInstances();
+    var now = Date.now();
+    instanceIDs.forEach(function (id) {
+      var data = localStorage.getItem("uppyState:" + id);
+      if (!data) return null;
+      var obj = maybeParse(data);
+      if (!obj) return null;
+
+      if (obj.expires && obj.expires < now) {
+        localStorage.removeItem("uppyState:" + id);
+      }
+    });
+  };
+
+  return MetaDataStore;
+}();
+},{}],22:[function(require,module,exports){
+/*eslint-disable */
+var isSupported = typeof navigator !== 'undefined' && 'serviceWorker' in navigator;
+
+function waitForServiceWorker() {
+  return new Promise(function (resolve, reject) {
+    if (!isSupported) {
+      reject(new Error('Unsupported'));
+    } else if (navigator.serviceWorker.controller) {
+      // A serviceWorker is already registered and active.
+      resolve();
+    } else {
+      navigator.serviceWorker.addEventListener('controllerchange', function () {
+        resolve();
+      });
+    }
+  });
+}
+
+var ServiceWorkerStore = /*#__PURE__*/function () {
+  function ServiceWorkerStore(opts) {
+    this.ready = waitForServiceWorker();
+    this.name = opts.storeName;
+  }
+
+  var _proto = ServiceWorkerStore.prototype;
+
+  _proto.list = function list() {
+    var _this = this;
+
+    var defer = {};
+    var promise = new Promise(function (resolve, reject) {
+      defer.resolve = resolve;
+      defer.reject = reject;
+    });
+    console.log('Loading stored blobs from Service Worker');
+
+    var onMessage = function onMessage(event) {
+      if (event.data.store !== _this.name) {
+        return;
+      }
+
+      switch (event.data.type) {
+        case 'uppy/ALL_FILES':
+          defer.resolve(event.data.files);
+          navigator.serviceWorker.removeEventListener('message', onMessage);
+          break;
+      }
+    };
+
+    this.ready.then(function () {
+      navigator.serviceWorker.addEventListener('message', onMessage);
+      navigator.serviceWorker.controller.postMessage({
+        type: 'uppy/GET_FILES',
+        store: _this.name
+      });
+    });
+    return promise;
+  };
+
+  _proto.put = function put(file) {
+    var _this2 = this;
+
+    return this.ready.then(function () {
+      navigator.serviceWorker.controller.postMessage({
+        type: 'uppy/ADD_FILE',
+        store: _this2.name,
+        file: file
+      });
+    });
+  };
+
+  _proto.delete = function _delete(fileID) {
+    var _this3 = this;
+
+    return this.ready.then(function () {
+      navigator.serviceWorker.controller.postMessage({
+        type: 'uppy/REMOVE_FILE',
+        store: _this3.name,
+        fileID: fileID
+      });
+    });
+  };
+
+  return ServiceWorkerStore;
+}();
+
+ServiceWorkerStore.isSupported = isSupported;
+module.exports = ServiceWorkerStore;
+},{}],23:[function(require,module,exports){
+var _class, _temp;
+
+function _extends() { _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
+
+function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
+
+function _inheritsLoose(subClass, superClass) { subClass.prototype = Object.create(superClass.prototype); subClass.prototype.constructor = subClass; _setPrototypeOf(subClass, superClass); }
+
+function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
+
+var throttle = require('lodash.throttle');
+
+var _require = require('@uppy/core'),
+    Plugin = _require.Plugin;
+
+var ServiceWorkerStore = require('./ServiceWorkerStore');
+
+var IndexedDBStore = require('./IndexedDBStore');
+
+var MetaDataStore = require('./MetaDataStore');
+/**
+ * The GoldenRetriever plugin — restores selected files and resumes uploads
+ * after a closed tab or a browser crash!
+ *
+ * Uses localStorage, IndexedDB and ServiceWorker to do its magic, read more:
+ * https://uppy.io/blog/2017/07/golden-retriever/
+ */
+
+
+module.exports = (_temp = _class = /*#__PURE__*/function (_Plugin) {
+  _inheritsLoose(GoldenRetriever, _Plugin);
+
+  function GoldenRetriever(uppy, opts) {
+    var _this;
+
+    _this = _Plugin.call(this, uppy, opts) || this;
+
+    _this.addBlobToStores = function (file) {
+      if (file.isRemote) return;
+
+      if (_this.ServiceWorkerStore) {
+        _this.ServiceWorkerStore.put(file).catch(function (err) {
+          _this.uppy.log('[GoldenRetriever] Could not store file', 'warning');
+
+          _this.uppy.log(err);
+        });
+      }
+
+      _this.IndexedDBStore.put(file).catch(function (err) {
+        _this.uppy.log('[GoldenRetriever] Could not store file', 'warning');
+
+        _this.uppy.log(err);
+      });
+    };
+
+    _this.removeBlobFromStores = function (file) {
+      if (_this.ServiceWorkerStore) {
+        _this.ServiceWorkerStore.delete(file.id).catch(function (err) {
+          _this.uppy.log('[GoldenRetriever] Failed to remove file', 'warning');
+
+          _this.uppy.log(err);
+        });
+      }
+
+      _this.IndexedDBStore.delete(file.id).catch(function (err) {
+        _this.uppy.log('[GoldenRetriever] Failed to remove file', 'warning');
+
+        _this.uppy.log(err);
+      });
+    };
+
+    _this.replaceBlobInStores = function (file) {
+      _this.removeBlobFromStores(file);
+
+      _this.addBlobToStores(file);
+    };
+
+    _this.handleRestoreConfirmed = function () {
+      _this.uppy.log('[GoldenRetriever] Restore confirmed, proceeding...'); // start all uploads again when file blobs are restored
+
+
+      var _this$uppy$getState = _this.uppy.getState(),
+          currentUploads = _this$uppy$getState.currentUploads;
+
+      if (currentUploads) {
+        Object.keys(currentUploads).forEach(function (uploadId) {
+          _this.uppy.restore(uploadId, currentUploads[uploadId]);
+        });
+
+        _this.uppy.resumeAll();
+      }
+
+      _this.uppy.upload();
+
+      _this.uppy.setState({
+        recoveredState: null
+      });
+    };
+
+    _this.abortRestore = function () {
+      _this.uppy.log('[GoldenRetriever] Aborting restore...');
+
+      var fileIDs = Object.keys(_this.uppy.getState().files);
+
+      _this.deleteBlobs(fileIDs).then(function () {
+        _this.uppy.log("[GoldenRetriever] Removed " + fileIDs.length + " files");
+      }).catch(function (err) {
+        _this.uppy.log("[GoldenRetriever] Could not remove " + fileIDs.length + " files", 'warning');
+
+        _this.uppy.log(err);
+      });
+
+      _this.uppy.cancelAll();
+
+      _this.uppy.setState({
+        recoveredState: null
+      });
+
+      MetaDataStore.cleanup(_this.uppy.opts.id);
+    };
+
+    _this.handleComplete = function (_ref) {
+      var successful = _ref.successful;
+      var fileIDs = successful.map(function (file) {
+        return file.id;
+      });
+
+      _this.deleteBlobs(fileIDs).then(function () {
+        _this.uppy.log("[GoldenRetriever] Removed " + successful.length + " files that finished uploading");
+      }).catch(function (err) {
+        _this.uppy.log("[GoldenRetriever] Could not remove " + successful.length + " files that finished uploading", 'warning');
+
+        _this.uppy.log(err);
+      });
+
+      _this.uppy.setState({
+        recoveredState: null
+      });
+
+      MetaDataStore.cleanup(_this.uppy.opts.id);
+    };
+
+    _this.restoreBlobs = function () {
+      if (_this.uppy.getFiles().length > 0) {
+        Promise.all([_this.loadFileBlobsFromServiceWorker(), _this.loadFileBlobsFromIndexedDB()]).then(function (resultingArrayOfObjects) {
+          var blobs = _extends({}, resultingArrayOfObjects[0], resultingArrayOfObjects[1]);
+
+          _this.onBlobsLoaded(blobs);
+        });
+      } else {
+        _this.uppy.log('[GoldenRetriever] No files need to be loaded, only restoring processing state...');
+
+        _this.onBlobsLoaded([]);
+      }
+    };
+
+    _this.type = 'debugger';
+    _this.id = _this.opts.id || 'GoldenRetriever';
+    _this.title = 'Golden Retriever';
+    var defaultOptions = {
+      expires: 24 * 60 * 60 * 1000,
+      // 24 hours
+      serviceWorker: false
+    };
+    _this.opts = _extends({}, defaultOptions, opts);
+    _this.MetaDataStore = new MetaDataStore({
+      expires: _this.opts.expires,
+      storeName: uppy.getID()
+    });
+    _this.ServiceWorkerStore = null;
+
+    if (_this.opts.serviceWorker) {
+      _this.ServiceWorkerStore = new ServiceWorkerStore({
+        storeName: uppy.getID()
+      });
+    }
+
+    _this.IndexedDBStore = new IndexedDBStore(_extends({
+      expires: _this.opts.expires
+    }, _this.opts.indexedDB || {}, {
+      storeName: uppy.getID()
+    }));
+    _this.saveFilesStateToLocalStorage = throttle(_this.saveFilesStateToLocalStorage.bind(_assertThisInitialized(_this)), 500, {
+      leading: true,
+      trailing: true
+    });
+    _this.restoreState = _this.restoreState.bind(_assertThisInitialized(_this));
+    _this.loadFileBlobsFromServiceWorker = _this.loadFileBlobsFromServiceWorker.bind(_assertThisInitialized(_this));
+    _this.loadFileBlobsFromIndexedDB = _this.loadFileBlobsFromIndexedDB.bind(_assertThisInitialized(_this));
+    _this.onBlobsLoaded = _this.onBlobsLoaded.bind(_assertThisInitialized(_this));
+    return _this;
+  }
+
+  var _proto = GoldenRetriever.prototype;
+
+  _proto.restoreState = function restoreState() {
+    var savedState = this.MetaDataStore.load();
+
+    if (savedState) {
+      this.uppy.log('[GoldenRetriever] Recovered some state from Local Storage');
+      this.uppy.setState({
+        currentUploads: savedState.currentUploads || {},
+        files: savedState.files || {},
+        recoveredState: savedState
+      });
+      this.savedPluginData = savedState.pluginData;
+    }
+  }
+  /**
+   * Get file objects that are currently waiting: they've been selected,
+   * but aren't yet being uploaded.
+   */
+  ;
+
+  _proto.getWaitingFiles = function getWaitingFiles() {
+    var waitingFiles = {};
+    this.uppy.getFiles().forEach(function (file) {
+      if (!file.progress || !file.progress.uploadStarted) {
+        waitingFiles[file.id] = file;
+      }
+    });
+    return waitingFiles;
+  }
+  /**
+   * Get file objects that are currently being uploaded. If a file has finished
+   * uploading, but the other files in the same batch have not, the finished
+   * file is also returned.
+   */
+  ;
+
+  _proto.getUploadingFiles = function getUploadingFiles() {
+    var _this2 = this;
+
+    var uploadingFiles = {};
+
+    var _this$uppy$getState2 = this.uppy.getState(),
+        currentUploads = _this$uppy$getState2.currentUploads;
+
+    if (currentUploads) {
+      var uploadIDs = Object.keys(currentUploads);
+      uploadIDs.forEach(function (uploadID) {
+        var filesInUpload = currentUploads[uploadID].fileIDs;
+        filesInUpload.forEach(function (fileID) {
+          uploadingFiles[fileID] = _this2.uppy.getFile(fileID);
+        });
+      });
+    }
+
+    return uploadingFiles;
+  };
+
+  _proto.saveFilesStateToLocalStorage = function saveFilesStateToLocalStorage() {
+    var filesToSave = _extends({}, this.getWaitingFiles(), this.getUploadingFiles()); // If all files have been removed by the user, clear recovery state
+
+
+    if (Object.keys(filesToSave).length === 0) {
+      this.uppy.setState({
+        recoveredState: null
+      });
+      MetaDataStore.cleanup(this.uppy.opts.id);
+      return;
+    } // We dont’t need to store file.data on local files, because the actual blob will be restored later,
+    // and we want to avoid having weird properties in the serialized object.
+    // Also adding file.isRestored to all files, since they will be restored from local storage
+
+
+    var filesToSaveWithoutData = {};
+    Object.keys(filesToSave).forEach(function (file) {
+      if (filesToSave[file].isRemote) {
+        filesToSaveWithoutData[file] = _extends({}, filesToSave[file], {
+          isRestored: true
+        });
+      } else {
+        filesToSaveWithoutData[file] = _extends({}, filesToSave[file], {
+          isRestored: true,
+          data: null,
+          preview: null
+        });
+      }
+    });
+    var pluginData = {}; // TODO Find a better way to do this?
+    // Other plugins can attach a restore:get-data listener that receives this callback.
+    // Plugins can then use this callback (sync) to provide data to be stored.
+
+    this.uppy.emit('restore:get-data', function (data) {
+      _extends(pluginData, data);
+    });
+
+    var _this$uppy$getState3 = this.uppy.getState(),
+        currentUploads = _this$uppy$getState3.currentUploads;
+
+    this.MetaDataStore.save({
+      currentUploads: currentUploads,
+      files: filesToSaveWithoutData,
+      pluginData: pluginData
+    });
+  };
+
+  _proto.loadFileBlobsFromServiceWorker = function loadFileBlobsFromServiceWorker() {
+    var _this3 = this;
+
+    if (!this.ServiceWorkerStore) {
+      return Promise.resolve({});
+    }
+
+    return this.ServiceWorkerStore.list().then(function (blobs) {
+      var files = _this3.uppy.getFiles();
+
+      var localFilesOnly = files.filter(function (file) {
+        // maybe && !file.progress.uploadComplete
+        return !file.isRemote;
+      });
+      var numberOfFilesRecovered = Object.keys(blobs).length;
+      var numberOfFilesTryingToRecover = localFilesOnly.length;
+
+      if (numberOfFilesRecovered === numberOfFilesTryingToRecover) {
+        _this3.uppy.log("[GoldenRetriever] Successfully recovered " + numberOfFilesRecovered + " blobs from Service Worker!");
+
+        return blobs;
+      }
+
+      _this3.uppy.log('[GoldenRetriever] No blobs found in Service Worker, trying IndexedDB now...');
+
+      return {};
+    }).catch(function (err) {
+      _this3.uppy.log('[GoldenRetriever] Failed to recover blobs from Service Worker', 'warning');
+
+      _this3.uppy.log(err);
+
+      return {};
+    });
+  };
+
+  _proto.loadFileBlobsFromIndexedDB = function loadFileBlobsFromIndexedDB() {
+    var _this4 = this;
+
+    return this.IndexedDBStore.list().then(function (blobs) {
+      var numberOfFilesRecovered = Object.keys(blobs).length;
+
+      if (numberOfFilesRecovered > 0) {
+        _this4.uppy.log("[GoldenRetriever] Successfully recovered " + numberOfFilesRecovered + " blobs from IndexedDB!");
+
+        return blobs;
+      }
+
+      _this4.uppy.log('[GoldenRetriever] No blobs found in IndexedDB');
+
+      return {};
+    }).catch(function (err) {
+      _this4.uppy.log('[GoldenRetriever] Failed to recover blobs from IndexedDB', 'warning');
+
+      _this4.uppy.log(err);
+
+      return {};
+    });
+  };
+
+  _proto.onBlobsLoaded = function onBlobsLoaded(blobs) {
+    var _this5 = this;
+
+    var obsoleteBlobs = [];
+
+    var updatedFiles = _extends({}, this.uppy.getState().files); // Loop through blobs that we can restore, add blobs to file objects
+
+
+    Object.keys(blobs).forEach(function (fileID) {
+      var originalFile = _this5.uppy.getFile(fileID);
+
+      if (!originalFile) {
+        obsoleteBlobs.push(fileID);
+        return;
+      }
+
+      var cachedData = blobs[fileID];
+      var updatedFileData = {
+        data: cachedData,
+        isRestored: true,
+        isGhost: false
+      };
+      updatedFiles[fileID] = _extends({}, originalFile, updatedFileData);
+    }); // Loop through files that we can’t restore fully — we only have meta, not blobs,
+    // set .isGhost on them, also set isRestored to all files
+
+    Object.keys(updatedFiles).forEach(function (fileID) {
+      if (updatedFiles[fileID].data === null) {
+        updatedFiles[fileID] = _extends({}, updatedFiles[fileID], {
+          isGhost: true
+        });
+      }
+    });
+    this.uppy.setState({
+      files: updatedFiles
+    });
+    this.uppy.emit('restored', this.savedPluginData);
+
+    if (obsoleteBlobs.length) {
+      this.deleteBlobs(obsoleteBlobs).then(function () {
+        _this5.uppy.log("[GoldenRetriever] Cleaned up " + obsoleteBlobs.length + " old files");
+      }).catch(function (err) {
+        _this5.uppy.log("[GoldenRetriever] Could not clean up " + obsoleteBlobs.length + " old files", 'warning');
+
+        _this5.uppy.log(err);
+      });
+    }
+  };
+
+  _proto.deleteBlobs = function deleteBlobs(fileIDs) {
+    var _this6 = this;
+
+    var promises = [];
+    fileIDs.forEach(function (id) {
+      if (_this6.ServiceWorkerStore) {
+        promises.push(_this6.ServiceWorkerStore.delete(id));
+      }
+
+      if (_this6.IndexedDBStore) {
+        promises.push(_this6.IndexedDBStore.delete(id));
+      }
+    });
+    return Promise.all(promises);
+  };
+
+  _proto.install = function install() {
+    this.restoreState();
+    this.restoreBlobs();
+    this.uppy.on('file-added', this.addBlobToStores);
+    this.uppy.on('file-editor:complete', this.replaceBlobInStores);
+    this.uppy.on('file-removed', this.removeBlobFromStores);
+    this.uppy.on('state-update', this.saveFilesStateToLocalStorage);
+    this.uppy.on('restore-confirmed', this.handleRestoreConfirmed);
+    this.uppy.on('restore-canceled', this.abortRestore);
+    this.uppy.on('complete', this.handleComplete);
+  };
+
+  _proto.uninstall = function uninstall() {
+    this.uppy.off('file-added', this.addBlobToStores);
+    this.uppy.off('file-editor:complete', this.replaceBlobInStores);
+    this.uppy.off('file-removed', this.removeBlobFromStores);
+    this.uppy.off('state-update', this.saveFilesStateToLocalStorage);
+    this.uppy.off('restore-confirmed', this.handleRestoreConfirmed);
+    this.uppy.off('restore-canceled', this.abortRestore);
+    this.uppy.off('complete', this.handleComplete);
+  };
+
+  return GoldenRetriever;
+}(Plugin), _class.VERSION = "1.4.2", _temp);
+},{"./IndexedDBStore":20,"./MetaDataStore":21,"./ServiceWorkerStore":22,"@uppy/core":16,"lodash.throttle":52}],24:[function(require,module,exports){
 function _extends() { _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
 
 /**
@@ -4756,7 +5696,7 @@ DefaultStore.VERSION = "1.2.7";
 module.exports = function defaultStore() {
   return new DefaultStore();
 };
-},{}],20:[function(require,module,exports){
+},{}],25:[function(require,module,exports){
 /**
  * Little AbortController proxy module so we can swap out the implementation easily later.
  */
@@ -4782,7 +5722,7 @@ function createAbortError(message) {
 exports.AbortController = AbortController;
 exports.AbortSignal = AbortSignal;
 exports.createAbortError = createAbortError;
-},{"abortcontroller-polyfill/dist/abortcontroller":42}],21:[function(require,module,exports){
+},{"abortcontroller-polyfill/dist/abortcontroller":47}],26:[function(require,module,exports){
 /**
  * Create a wrapper around an event emitter with a `remove` method to remove
  * all events that were added using the wrapped emitter.
@@ -4814,7 +5754,7 @@ module.exports = /*#__PURE__*/function () {
 
   return EventTracker;
 }();
-},{}],22:[function(require,module,exports){
+},{}],27:[function(require,module,exports){
 function _inheritsLoose(subClass, superClass) { subClass.prototype = Object.create(superClass.prototype); subClass.prototype.constructor = subClass; _setPrototypeOf(subClass, superClass); }
 
 function _wrapNativeSuper(Class) { var _cache = typeof Map === "function" ? new Map() : undefined; _wrapNativeSuper = function _wrapNativeSuper(Class) { if (Class === null || !_isNativeFunction(Class)) return Class; if (typeof Class !== "function") { throw new TypeError("Super expression must either be null or a function"); } if (typeof _cache !== "undefined") { if (_cache.has(Class)) return _cache.get(Class); _cache.set(Class, Wrapper); } function Wrapper() { return _construct(Class, arguments, _getPrototypeOf(this).constructor); } Wrapper.prototype = Object.create(Class.prototype, { constructor: { value: Wrapper, enumerable: false, writable: true, configurable: true } }); return _setPrototypeOf(Wrapper, Class); }; return _wrapNativeSuper(Class); }
@@ -4849,7 +5789,7 @@ var NetworkError = /*#__PURE__*/function (_Error) {
 }( /*#__PURE__*/_wrapNativeSuper(Error));
 
 module.exports = NetworkError;
-},{}],23:[function(require,module,exports){
+},{}],28:[function(require,module,exports){
 /**
  * Helper to abort upload requests if there has not been any progress for `timeout` ms.
  * Create an instance using `timer = new ProgressTimeout(10000, onTimeout)`
@@ -4892,7 +5832,7 @@ var ProgressTimeout = /*#__PURE__*/function () {
 }();
 
 module.exports = ProgressTimeout;
-},{}],24:[function(require,module,exports){
+},{}],29:[function(require,module,exports){
 var findIndex = require('./findIndex');
 
 function createCancelError() {
@@ -5074,7 +6014,7 @@ module.exports = /*#__PURE__*/function () {
 
   return RateLimitedQueue;
 }();
-},{"./findIndex":30}],25:[function(require,module,exports){
+},{"./findIndex":35}],30:[function(require,module,exports){
 function _extends() { _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
 
 var has = require('./hasProperty');
@@ -5140,7 +6080,7 @@ module.exports = /*#__PURE__*/function () {
    *
    * @param {string} phrase that needs interpolation, with placeholders
    * @param {object} options with values that will be used to replace placeholders
-   * @returns {string} interpolated
+   * @returns {any[]} interpolated
    */
   ;
 
@@ -5240,7 +6180,7 @@ module.exports = /*#__PURE__*/function () {
 
   return Translator;
 }();
-},{"./hasProperty":36}],26:[function(require,module,exports){
+},{"./hasProperty":41}],31:[function(require,module,exports){
 var _require = require('./AbortController'),
     createAbortError = _require.createAbortError;
 /**
@@ -5280,7 +6220,7 @@ module.exports = function delay(ms, opts) {
     }
   });
 };
-},{"./AbortController":20}],27:[function(require,module,exports){
+},{"./AbortController":25}],32:[function(require,module,exports){
 var throttle = require('lodash.throttle');
 
 function _emitSocketProgress(uploader, progressData, file) {
@@ -5302,7 +6242,7 @@ module.exports = throttle(_emitSocketProgress, 300, {
   leading: true,
   trailing: true
 });
-},{"lodash.throttle":47}],28:[function(require,module,exports){
+},{"lodash.throttle":52}],33:[function(require,module,exports){
 var NetworkError = require('./NetworkError');
 /**
  * Wrapper around window.fetch that throws a NetworkError when appropriate
@@ -5318,7 +6258,7 @@ module.exports = function fetchWithNetworkError() {
     }
   });
 };
-},{"./NetworkError":22}],29:[function(require,module,exports){
+},{"./NetworkError":27}],34:[function(require,module,exports){
 var isDOMElement = require('./isDOMElement');
 /**
  * Find a DOM element.
@@ -5341,7 +6281,7 @@ module.exports = function findDOMElement(element, context) {
     return element;
   }
 };
-},{"./isDOMElement":37}],30:[function(require,module,exports){
+},{"./isDOMElement":42}],35:[function(require,module,exports){
 /**
  * Array.prototype.findIndex ponyfill for old browsers.
  *
@@ -5356,7 +6296,7 @@ module.exports = function findIndex(array, predicate) {
 
   return -1;
 };
-},{}],31:[function(require,module,exports){
+},{}],36:[function(require,module,exports){
 /**
  * Takes a file object and turns it into fileID, by converting file.name to lowercase,
  * removing extra characters and adding type, size and lastModified
@@ -5403,7 +6343,7 @@ function encodeFilename(name) {
 function encodeCharacter(character) {
   return character.charCodeAt(0).toString(32);
 }
-},{}],32:[function(require,module,exports){
+},{}],37:[function(require,module,exports){
 /**
  * Takes a full filename string and returns an object {name, extension}
  *
@@ -5425,7 +6365,7 @@ module.exports = function getFileNameAndExtension(fullFileName) {
     extension: fullFileName.slice(lastDot + 1)
   };
 };
-},{}],33:[function(require,module,exports){
+},{}],38:[function(require,module,exports){
 var getFileNameAndExtension = require('./getFileNameAndExtension');
 
 var mimeTypes = require('./mimeTypes');
@@ -5447,7 +6387,7 @@ module.exports = function getFileType(file) {
 
   return 'application/octet-stream';
 };
-},{"./getFileNameAndExtension":32,"./mimeTypes":39}],34:[function(require,module,exports){
+},{"./getFileNameAndExtension":37,"./mimeTypes":44}],39:[function(require,module,exports){
 module.exports = function getSocketHost(url) {
   // get the host domain
   var regex = /^(?:https?:\/\/|\/\/)?(?:[^@\n]+@)?(?:www\.)?([^\n]+)/i;
@@ -5455,7 +6395,7 @@ module.exports = function getSocketHost(url) {
   var socketProtocol = /^http:\/\//i.test(url) ? 'ws' : 'wss';
   return socketProtocol + "://" + host;
 };
-},{}],35:[function(require,module,exports){
+},{}],40:[function(require,module,exports){
 /**
  * Returns a timestamp in the format of `hours:minutes:seconds`
  */
@@ -5474,11 +6414,11 @@ module.exports = function getTimeStamp() {
 function pad(str) {
   return str.length !== 2 ? 0 + str : str;
 }
-},{}],36:[function(require,module,exports){
+},{}],41:[function(require,module,exports){
 module.exports = function has(object, key) {
   return Object.prototype.hasOwnProperty.call(object, key);
 };
-},{}],37:[function(require,module,exports){
+},{}],42:[function(require,module,exports){
 /**
  * Check if an object is a DOM element. Duck-typing based on `nodeType`.
  *
@@ -5487,7 +6427,7 @@ module.exports = function has(object, key) {
 module.exports = function isDOMElement(obj) {
   return obj && typeof obj === 'object' && obj.nodeType === Node.ELEMENT_NODE;
 };
-},{}],38:[function(require,module,exports){
+},{}],43:[function(require,module,exports){
 function isNetworkError(xhr) {
   if (!xhr) {
     return false;
@@ -5497,7 +6437,7 @@ function isNetworkError(xhr) {
 }
 
 module.exports = isNetworkError;
-},{}],39:[function(require,module,exports){
+},{}],44:[function(require,module,exports){
 // ___Why not add the mime-types package?
 //    It's 19.7kB gzipped, and we only need mime types for well-known extensions (for file previews).
 // ___Where to take new extensions from?
@@ -5553,7 +6493,7 @@ module.exports = {
   gz: 'application/gzip',
   dmg: 'application/x-apple-diskimage'
 };
-},{}],40:[function(require,module,exports){
+},{}],45:[function(require,module,exports){
 module.exports = function settle(promises) {
   var resolutions = [];
   var rejections = [];
@@ -5576,7 +6516,7 @@ module.exports = function settle(promises) {
     };
   });
 };
-},{}],41:[function(require,module,exports){
+},{}],46:[function(require,module,exports){
 var _class, _temp;
 
 function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
@@ -6315,8 +7255,8 @@ module.exports = (_temp = _class = /*#__PURE__*/function (_Plugin) {
   };
 
   return XHRUpload;
-}(Plugin), _class.VERSION = "1.7.4", _temp);
-},{"@uppy/companion-client":13,"@uppy/core":16,"@uppy/utils/lib/EventTracker":21,"@uppy/utils/lib/NetworkError":22,"@uppy/utils/lib/ProgressTimeout":23,"@uppy/utils/lib/RateLimitedQueue":24,"@uppy/utils/lib/Translator":25,"@uppy/utils/lib/emitSocketProgress":27,"@uppy/utils/lib/getSocketHost":34,"@uppy/utils/lib/isNetworkError":38,"@uppy/utils/lib/settle":40,"cuid":43}],42:[function(require,module,exports){
+}(Plugin), _class.VERSION = "1.7.5", _temp);
+},{"@uppy/companion-client":13,"@uppy/core":16,"@uppy/utils/lib/EventTracker":26,"@uppy/utils/lib/NetworkError":27,"@uppy/utils/lib/ProgressTimeout":28,"@uppy/utils/lib/RateLimitedQueue":29,"@uppy/utils/lib/Translator":30,"@uppy/utils/lib/emitSocketProgress":32,"@uppy/utils/lib/getSocketHost":39,"@uppy/utils/lib/isNetworkError":43,"@uppy/utils/lib/settle":45,"cuid":48}],47:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', { value: true });
@@ -6646,7 +7586,7 @@ exports.AbortController = AbortController;
 exports.AbortSignal = AbortSignal;
 exports.default = AbortController;
 
-},{}],43:[function(require,module,exports){
+},{}],48:[function(require,module,exports){
 /**
  * cuid.js
  * Collision-resistant UID generator for browsers and node.
@@ -6732,7 +7672,7 @@ cuid.fingerprint = fingerprint;
 
 module.exports = cuid;
 
-},{"./lib/fingerprint.js":44,"./lib/getRandomValue.js":45,"./lib/pad.js":46}],44:[function(require,module,exports){
+},{"./lib/fingerprint.js":49,"./lib/getRandomValue.js":50,"./lib/pad.js":51}],49:[function(require,module,exports){
 var pad = require('./pad.js');
 
 var env = typeof window === 'object' ? window : self;
@@ -6746,7 +7686,7 @@ module.exports = function fingerprint () {
   return clientId;
 };
 
-},{"./pad.js":46}],45:[function(require,module,exports){
+},{"./pad.js":51}],50:[function(require,module,exports){
 
 var getRandomValue;
 
@@ -6766,13 +7706,13 @@ if (crypto) {
 
 module.exports = getRandomValue;
 
-},{}],46:[function(require,module,exports){
+},{}],51:[function(require,module,exports){
 module.exports = function pad (num, size) {
   var s = '000000000' + num;
   return s.substr(s.length - size);
 };
 
-},{}],47:[function(require,module,exports){
+},{}],52:[function(require,module,exports){
 (function (global){(function (){
 /**
  * lodash (Custom Build) <https://lodash.com/>
@@ -7215,7 +8155,7 @@ function toNumber(value) {
 module.exports = throttle;
 
 }).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],48:[function(require,module,exports){
+},{}],53:[function(require,module,exports){
 var wildcard = require('wildcard');
 var reMimePartSplit = /[\/\+\.]/;
 
@@ -7241,7 +8181,7 @@ module.exports = function(target, pattern) {
   return pattern ? test(pattern.split(';')[0]) : test;
 };
 
-},{"wildcard":55}],49:[function(require,module,exports){
+},{"wildcard":60}],54:[function(require,module,exports){
 /**
 * Create an event emitter with namespaces
 * @name createNamespaceEmitter
@@ -7379,7 +8319,7 @@ module.exports = function createNamespaceEmitter () {
   return emitter
 }
 
-},{}],50:[function(require,module,exports){
+},{}],55:[function(require,module,exports){
 !function() {
     'use strict';
     function VNode() {}
@@ -7788,7 +8728,7 @@ module.exports = function createNamespaceEmitter () {
     if ('undefined' != typeof module) module.exports = preact; else self.preact = preact;
 }();
 
-},{}],51:[function(require,module,exports){
+},{}],56:[function(require,module,exports){
 var has = Object.prototype.hasOwnProperty
 
 /**
@@ -7820,7 +8760,7 @@ module.exports = function queryStringify (obj, prefix) {
   return pairs.join('&')
 }
 
-},{}],52:[function(require,module,exports){
+},{}],57:[function(require,module,exports){
 'use strict';
 
 var has = Object.prototype.hasOwnProperty
@@ -7940,7 +8880,7 @@ function querystringify(obj, prefix) {
 exports.stringify = querystringify;
 exports.parse = querystring;
 
-},{}],53:[function(require,module,exports){
+},{}],58:[function(require,module,exports){
 'use strict';
 
 /**
@@ -7980,7 +8920,7 @@ module.exports = function required(port, protocol) {
   return port !== 0;
 };
 
-},{}],54:[function(require,module,exports){
+},{}],59:[function(require,module,exports){
 (function (global){(function (){
 'use strict';
 
@@ -8446,7 +9386,7 @@ Url.qs = qs;
 module.exports = Url;
 
 }).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"querystringify":52,"requires-port":53}],55:[function(require,module,exports){
+},{"querystringify":57,"requires-port":58}],60:[function(require,module,exports){
 /* jshint node: true */
 'use strict';
 

@@ -72,8 +72,8 @@ class UploadsController < ApplicationController
   end
 
   def generate_presigned
-    url, key = Discourse.store.presigned_put_object_url(params[:filename])
-    render json: { method: :put, url: url, key: key }
+    presigned_data = Discourse.store.presigned_put_object_url(params[:filename])
+    render json: { method: :put, url: presigned_data[:url], key: presigned_data[:key] }
   end
 
   def show
@@ -186,6 +186,50 @@ class UploadsController < ApplicationController
       height: upload.height,
       human_filesize: upload.human_filesize
     }
+  end
+
+  def create_multipart_upload
+    return render_404 if !Discourse.store.external?
+    multipart_upload = Discourse.store.create_multipart_upload(
+      params[:filename], params[:content_type]
+    )
+    render json: { upload_id: multipart_upload[:upload_id], key: multipart_upload[:key] }
+  end
+
+  def list_multipart_upload_parts
+    return render_404 if !Discourse.store.external?
+    parts = Discourse.store.list_multipart_upload_parts(upload_id: params[:uploadId], key: params[:key])
+    render json: { parts: parts }
+  end
+
+  def presign_upload_part
+    return render_404 if !Discourse.store.external?
+    url = Discourse.store.presign_multipart_upload_part(
+      upload_id: params[:upload_id],
+      key: params[:key],
+      part_number: params[:part_number]
+    )
+    render json: { url: url }
+  end
+
+  def abort_multipart_upload
+    # TODO (martin): Uh...write this code
+  end
+
+  def complete_multipart_upload
+    return render_404 if !Discourse.store.external?
+    params.permit(:key, :uploadId)
+
+    # TODO (martin): Another uppy-specific thing of param munging
+    parts = params[:parts].each(&:permit!).map do |part|
+      { part_number: part[:PartNumber], etag: part[:ETag] }
+    end
+    Discourse.store.complete_multipart_upload(
+      upload_id: params[:uploadId],
+      key: params[:key],
+      parts: parts
+    )
+    render json: success_json
   end
 
   protected

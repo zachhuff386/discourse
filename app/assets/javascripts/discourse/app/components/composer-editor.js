@@ -33,7 +33,8 @@ import { later, next, run, schedule, throttle } from "@ember/runloop";
 import Component from "@ember/component";
 import Composer from "discourse/models/composer";
 import EmberObject from "@ember/object";
-import Uppy, { AwsS3, XHRUpload } from "uppy";
+import Uppy, { AwsS3, AwsS3Multipart, GoldenRetriever, XHRUpload } from "uppy";
+import UppyMediaOptimization from "discourse/lib/uppy-media-optimization-plugin";
 import I18n from "I18n";
 import { ajax } from "discourse/lib/ajax";
 import bootbox from "bootbox";
@@ -83,6 +84,7 @@ export default Component.extend({
 
   uploadProgress: 0,
   _xhr: null,
+  uppyInstance: null,
   shouldBuildScrollMap: true,
   scrollMap: null,
   uploadFilenamePlaceholder: null,
@@ -674,17 +676,63 @@ export default Component.extend({
   },
 
   _bindUppyUploadTarget() {
-    const uppy = new Uppy({ autoProceed: true });
+    // const nullLogger = {
+    //   debug: (...args) => {},
+    //   warn: (...args) => {},
+    //   error: (...args) => {},
+    // };
+    const uppy = new Uppy({
+      autoProceed: true,
+      debug: true,
+      onBeforeUpload: (files) => {
+        let uploadIdResume = null;
+        let keyResume = null;
+        debugger;
+      },
+    });
+    this.set("uppyInstance", uppy);
     let useXhr = false;
+    let useS3 = false;
+    let useS3Multipart = true;
 
+    if (this.siteSettings.composer_media_optimization_image_enabled && false) {
+      uppy.use(UppyMediaOptimization, {
+        workerService: Discourse.__container__.lookup(
+          "service:media-optimization-worker"
+        ),
+      });
+
+      uppy.on("preprocess-progress", (file, progress) => {
+        this.appEvents.trigger(
+          "composer:insert-text",
+          `[${I18n.t("processing_filename", {
+            filename: file.name,
+          })}]()\n`
+        );
+        this.set("isProcessingUpload", true);
+      });
+      uppy.on("preprocess-complete", (file) => {
+        this.appEvents.trigger(
+          "composer:replace-text",
+          `[${I18n.t("processing_filename", {
+            filename: file.name,
+          })}]()\n`,
+          ""
+        );
+        this.set("isProcessingUpload", false);
+      });
+    }
+    uppy.use(GoldenRetriever, { serviceWorker: true });
+
+    const csrfToken = this._csrfToken();
     if (useXhr) {
       uppy.use(XHRUpload, {
         endpoint: getURL(`/uploads.json?client_id=${this.messageBus.clientId}`),
         headers: {
-          "X-CSRF-Token": this._csrfToken(),
+          "X-CSRF-Token": csrfToken,
         },
       });
-    } else {
+    } else if (useS3) {
       uppy.use(AwsS3, {
         getUploadParameters(file) {
           return fetch("/uploads/generate-presigned", {
@@ -692,11 +740,11 @@ export default Component.extend({
             headers: {
               accept: "application/json",
               "content-type": "application/json",
-              "X-CSRF-Token": this._csrfToken(),
+              "X-CSRF-Token": csrfToken,
             },
             body: JSON.stringify({
               filename: file.name,
-              contentType: file.type,
+              content_type: file.type,
             }),
           })
             .then((response) => {
@@ -713,6 +761,98 @@ export default Component.extend({
                   "Content-Type": file.type,
                 },
               };
+            });
+        },
+      });
+    } else if (useS3Multipart) {
+      uppy.use(AwsS3Multipart, {
+        createMultipartUpload(file) {
+          return fetch("/uploads/create-multipart-upload", {
+            method: "post",
+            headers: {
+              accept: "application/json",
+              "content-type": "application/json",
+              "X-CSRF-Token": csrfToken,
+            },
+            body: JSON.stringify({
+              filename: file.name,
+              content_type: file.type,
+            }),
+          })
+            .then((response) => {
+              // Parse the JSON response.
+              return response.json();
+            })
+            .then((data) => {
+              // Return an object in the correct shape.
+              return {
+                uploadId: data.upload_id,
+                key: data.key,
+              };
+            });
+        },
+
+        prepareUploadPart(file, partData) {
+          return fetch("/uploads/presign-multipart-upload-part", {
+            method: "post",
+            headers: {
+              accept: "application/json",
+              "content-type": "application/json",
+              "X-CSRF-Token": csrfToken,
+            },
+            body: JSON.stringify({
+              part_number: partData.number,
+              key: partData.key,
+              upload_id: partData.uploadId,
+            }),
+          })
+            .then((response) => {
+              // Parse the JSON response.
+              return response.json();
+            })
+            .then((data) => {
+              // Return an object in the correct shape.
+              return { url: data.url };
+            });
+        },
+
+        listParts(file, data) {
+          return fetch("/uploads/list-multipart-upload-parts", {
+            method: "post",
+            headers: {
+              accept: "application/json",
+              "content-type": "application/json",
+              "X-CSRF-Token": csrfToken,
+            },
+            body: JSON.stringify(data),
+          })
+            .then((response) => {
+              // Parse the JSON response.
+              return response.json();
+            })
+            .then((data) => {
+              // Return an object in the correct shape.
+              return data.parts;
+            });
+        },
+
+        completeMultipartUpload(file, data) {
+          return fetch("/uploads/complete-multipart-upload", {
+            method: "post",
+            headers: {
+              accept: "application/json",
+              "content-type": "application/json",
+              "X-CSRF-Token": csrfToken,
+            },
+            body: JSON.stringify(data),
+          })
+            .then((response) => {
+              // Parse the JSON response.
+              return response.json();
+            })
+            .then((data) => {
+              // Return an object in the correct shape.
+              return { url: data.url };
             });
         },
       });
@@ -1124,8 +1264,10 @@ export default Component.extend({
     },
 
     uploadWithUppy() {
-      // eslint-disable-next-line no-console
-      console.log("ok");
+      this.uploadWithUppy(this.uppyInstance);
+    },
+    startUppy() {
+      this.startUppy(this.uppyInstance);
     },
 
     extraButtons(toolbar) {
@@ -1154,6 +1296,15 @@ export default Component.extend({
           icon: "crosshairs",
           title: "composer.uppy_upload",
           sendAction: this.uploadWithUppy,
+        });
+
+        // uppy
+        toolbar.addButton({
+          id: "startUppy",
+          group: "insertions",
+          icon: "facebook",
+          title: "composer.uppy_upload",
+          sendAction: this.startUppy,
         });
       }
 

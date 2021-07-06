@@ -35,31 +35,30 @@ export default class MediaOptimizationWorkerService extends Service {
     }
   }
 
-  optimizeImage(data) {
-    let file = data.files[data.index];
+  optimizeImage(file) {
+    console.log("optimizing", file);
     if (!/(\.|\/)(jpe?g|png|webp)$/i.test(file.type)) {
-      return data;
+      return Promise.resolve();
     }
     if (
       file.size <
       this.siteSettings
         .composer_media_optimization_image_kilobytes_optimization_threshold
     ) {
-      return data;
+      return Promise.resolve();
     }
     this.ensureAvailiableWorker();
     return new Promise(async (resolve) => {
       this.logIfDebug(`Transforming ${file.name}`);
 
-      this.currentComposerUploadData = data;
       this.currentPromiseResolver = resolve;
 
       let imageData;
       try {
-        imageData = await fileToImageData(file);
+        imageData = await fileToImageData(file.data);
       } catch (error) {
         this.logIfDebug(error);
-        return resolve(data);
+        return resolve();
       }
 
       this.worker.postMessage(
@@ -111,13 +110,11 @@ export default class MediaOptimizationWorkerService extends Service {
           this.logIfDebug(
             `Finished optimization of ${optimizedFile.name} new size: ${optimizedFile.size}.`
           );
-          let data = this.currentComposerUploadData;
-          data.files[data.index] = optimizedFile;
-          this.currentPromiseResolver(data);
+          this.currentPromiseResolver(optimizedFile);
           break;
         case "error":
           this.stopWorker();
-          this.currentPromiseResolver(this.currentComposerUploadData);
+          this.currentPromiseResolver();
           break;
         default:
           this.logIfDebug(`Sorry, we are out of ${e}.`);

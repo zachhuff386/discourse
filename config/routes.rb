@@ -537,6 +537,10 @@ Discourse::Application.routes.draw do
     post "uploads" => "uploads#create"
     post "uploads/lookup-urls" => "uploads#lookup_urls"
     post "uploads/generate-presigned" => "uploads#generate_presigned"
+    post "uploads/create-multipart-upload" => "uploads#create_multipart_upload"
+    post "uploads/list-multipart-upload-parts" => "uploads#list_multipart_upload_parts"
+    post "uploads/complete-multipart-upload" => "uploads#complete_multipart_upload"
+    post "uploads/presign-multipart-upload-part" => "uploads#presign_upload_part"
 
     # used to download original images
     get "uploads/:site/:sha(.:extension)" => "uploads#show", constraints: { site: /\w+/, sha: /\h{40}/, extension: /[a-z0-9\._]+/i }

@@ -256,7 +256,55 @@ module FileStore
         acl: "private",
         expires_in: S3Helper::UPLOAD_URL_EXPIRES_AFTER_SECONDS
       )
-      [url, key]
+      { url: url, key: key }
+    end
+
+    def create_multipart_upload(filename, content_type, key_prefix = "uppy_test")
+      key = "#{key_prefix}/#{SecureRandom.hex(4)}/#{filename}"
+      response = s3_helper.s3_client.create_multipart_upload(
+        acl: "private",
+        bucket: s3_bucket_name,
+        key: key,
+        content_type: content_type
+      )
+      { upload_id: response.upload_id, key: key }
+    end
+
+    def presign_multipart_upload_part(upload_id:, key:, part_number:)
+      signer = Aws::S3::Presigner.new(client: s3_helper.s3_client)
+      signer.presigned_url(
+        :upload_part,
+        bucket: s3_bucket_name,
+        key: key,
+        part_number: part_number,
+        upload_id: upload_id,
+        expires_in: S3Helper::UPLOAD_URL_EXPIRES_AFTER_SECONDS
+      )
+    end
+
+    def list_multipart_upload_parts(upload_id:, key:)
+      response = s3_helper.s3_client.list_parts(
+        bucket: s3_bucket_name,
+        key: key,
+        upload_id: upload_id
+      )
+
+      # TODO (martin): maybe do this in a serializer instead, or on JS side because
+      # the mapping is only for uppy's benefit really
+      response.parts.map do |part|
+        { PartNumber: part.part_number, Size: part.size, ETag: part.etag }
+      end
+    end
+
+    def complete_multipart_upload(upload_id:, key:, parts:)
+      response = s3_helper.s3_client.complete_multipart_upload(
+        bucket: s3_bucket_name,
+        key: key,
+        upload_id: upload_id,
+        multipart_upload: {
+          parts: parts
+        }
+      )
     end
 
     private

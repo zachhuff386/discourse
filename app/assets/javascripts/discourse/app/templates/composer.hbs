@@ -127,10 +127,14 @@
                           cannotSeeMention=(action "cannotSeeMention")
                           importQuote=(action "importQuote")
                           uploadWithUppy=(action "uploadWithUppy")
+                          startUppy=(action "startUppy")
+                          uppyInstance=uppyInstance
                           togglePreview=(action "togglePreview")
                           showToolbar=showToolbar
                           afterRefresh=(action "afterRefresh")
                           focusTarget=focusTarget}}
+
+                          <input type="file" id="file-uploader-uppy" multiple>
 
         {{plugin-outlet name="composer-after-composer-editor" connectorTagName="" args=(hash model=model)}}
         <div class="submit-panel">

@@ -107,6 +107,7 @@ export default Controller.extend({
   isProcessingUpload: false,
   topic: null,
   linkLookup: null,
+  uppyInstance: null,
   showPreview: true,
   forcePreview: and("site.mobileView", "showPreview"),
   whisperOrUnlistTopic: or("isWhispering", "model.unlistTopic"),
@@ -374,6 +375,13 @@ export default Controller.extend({
   actions: {
     uploadWithUppy() {
       document.getElementById("file-uploader-uppy").click();
+    },
+
+    startUppy() {
+      // this.uppyInstance.resumeAll();
+      this.uppyInstance.upload().then((result) => {
+        console.log(result);
+      });
     },
 
     togglePreview() {
