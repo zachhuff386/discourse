@@ -193,6 +193,10 @@ class User < ActiveRecord::Base
     joins(:user_emails).where("lower(user_emails.email) IN (?)", email)
   end
 
+  scope :with_primary_email, ->(email) do
+    joins(:user_emails).where("lower(user_emails.email) IN (?) AND user_emails.primary", email)
+  end
+
   scope :human_users, -> { where('users.id > 0') }
 
   # excluding fake users like the system user or anonymous users
@@ -293,21 +297,6 @@ class User < ActiveRecord::Base
     fields.uniq
   end
 
-  def self.register_plugin_editable_user_custom_field(custom_field_name, plugin, staff_only: false)
-    Discourse.deprecate("Editable user custom fields should be registered using the plugin API", since: "v2.4.0.beta4", drop_from: "v2.5.0")
-    DiscoursePluginRegistry.register_editable_user_custom_field(custom_field_name, plugin, staff_only: staff_only)
-  end
-
-  def self.register_plugin_staff_custom_field(custom_field_name, plugin)
-    Discourse.deprecate("Staff user custom fields should be registered using the plugin API",  since: "v2.4.0.beta4", drop_from: "v2.5.0")
-    DiscoursePluginRegistry.register_staff_user_custom_field(custom_field_name, plugin)
-  end
-
-  def self.register_plugin_public_custom_field(custom_field_name, plugin)
-    Discourse.deprecate("Public user custom fields should be registered using the plugin API", since: "v2.4.0.beta4", drop_from: "v2.5.0")
-    DiscoursePluginRegistry.register_public_user_custom_field(custom_field_name, plugin)
-  end
-
   def self.allowed_user_custom_fields(guardian)
     fields = []
 
@@ -386,8 +375,12 @@ class User < ActiveRecord::Base
     end
   end
 
-  def self.find_by_email(email)
-    self.with_email(Email.downcase(email)).first
+  def self.find_by_email(email, primary: false)
+    if primary
+      self.with_primary_email(Email.downcase(email)).first
+    else
+      self.with_email(Email.downcase(email)).first
+    end
   end
 
   def self.find_by_username(username)

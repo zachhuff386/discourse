@@ -1259,7 +1259,13 @@ describe PostAlerter do
     fab!(:category) { Fabricate(:category) }
 
     it 'creates single edit notification when post is modified' do
-      TopicUser.create!(user_id: user.id, topic_id: topic.id, notification_level: TopicUser.notification_levels[:watching], highest_seen_post_number: post.post_number)
+      TopicUser.create!(
+        user_id: user.id,
+        topic_id: topic.id,
+        notification_level: TopicUser.notification_levels[:watching],
+        last_read_post_number: post.post_number
+      )
+
       PostRevisor.new(post).revise!(last_editor, tags: [tag.name])
       PostAlerter.new.notify_post_users(post, [])
       expect(Notification.count).to eq(1)
@@ -1280,7 +1286,7 @@ describe PostAlerter do
         category: category.id
       )
 
-      TopicUser.change(user, post.topic_id, highest_seen_post_number: post.post_number)
+      TopicUser.change(user, post.topic_id, last_read_post_number: post.post_number)
 
       # Manually run job after the user read the topic to simulate a slow
       # Sidekiq.
@@ -1366,6 +1372,24 @@ describe PostAlerter do
       topic = incoming_email_post.topic
       post = Fabricate(:post, topic: topic, post_type: Post.types[:whisper])
       expect { PostAlerter.new.after_save_post(post, true) }.to change { ActionMailer::Base.deliveries.size }.by(0)
+    end
+
+    it "sends the group smtp email job with a delay of personal_email_time_window_seconds" do
+      freeze_time
+      incoming_email_post = create_post_with_incoming
+      topic = incoming_email_post.topic
+      post = Fabricate(:post, topic: topic)
+      PostAlerter.new.after_save_post(post, true)
+      job_enqueued?(
+        job: :group_smtp_email,
+        args: {
+          group_id: group.id,
+          post_id: post.id,
+          email: topic.reload.topic_allowed_users.order(:created_at).first.user.email,
+          cc_emails: ["bar@discourse.org", "jim@othersite.com"]
+        },
+        at: Time.zone.now + SiteSetting.personal_email_time_window_seconds.seconds
+      )
     end
 
     it "skips sending a notification email to the group and all other email addresses that are _not_ members of the group,

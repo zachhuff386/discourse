@@ -17,8 +17,10 @@ class BootstrapController < ApplicationController
     end
 
     @stylesheets = []
-    add_scheme(scheme_id, 'all')
-    add_scheme(dark_scheme_id, '(prefers-color-scheme: dark)')
+
+    add_scheme(scheme_id, "all", "light-scheme")
+    add_scheme(dark_scheme_id, "(prefers-color-scheme: dark)", "dark-scheme")
+
     if rtl?
       add_style(mobile_view? ? :mobile_rtl : :desktop_rtl)
     else
@@ -52,6 +54,7 @@ class BootstrapController < ApplicationController
 
     bootstrap = {
       theme_id: theme_id,
+      theme_color: "##{ColorScheme.hex_for_name('header_background', scheme_id)}",
       title: SiteSetting.title,
       current_homepage: current_homepage,
       locale_script: locale,
@@ -73,11 +76,11 @@ class BootstrapController < ApplicationController
   end
 
 private
-  def add_scheme(scheme_id, media)
+  def add_scheme(scheme_id, media, css_class)
     return if scheme_id.to_i == -1
 
     if style = Stylesheet::Manager.new(theme_id: theme_id).color_scheme_stylesheet_details(scheme_id, media)
-      @stylesheets << { href: style[:new_href], media: media }
+      @stylesheets << { href: style[:new_href], media: media, class: css_class }
     end
   end
 
