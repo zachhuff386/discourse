@@ -1,4 +1,4 @@
-import { Plugin } from "uppy";
+import { Plugin } from "@uppy/core";
 import { Promise } from "rsvp";
 
 export default class UppyMediaOptimization extends Plugin {

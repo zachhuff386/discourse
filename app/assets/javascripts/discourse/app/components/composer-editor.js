@@ -33,7 +33,12 @@ import { later, next, run, schedule, throttle } from "@ember/runloop";
 import Component from "@ember/component";
 import Composer from "discourse/models/composer";
 import EmberObject from "@ember/object";
-import Uppy, { AwsS3, AwsS3Multipart, GoldenRetriever, XHRUpload } from "uppy";
+import Uppy, {
+  AwsS3,
+  AwsS3Multipart,
+  GoldenRetriever,
+  XHRUpload,
+} from "@uppy/core";
 import UppyMediaOptimization from "discourse/lib/uppy-media-optimization-plugin";
 import I18n from "I18n";
 import { ajax } from "discourse/lib/ajax";
