@@ -3098,7 +3098,6 @@ en:
       bookmarks:
         create: "Create bookmark"
         edit: "Edit bookmark"
-        created: "Created"
         updated: "Updated"
         name: "Name"
         name_placeholder: "What is this bookmark for?"
