@@ -1201,9 +1201,6 @@ export default Controller.extend({
           },
           onSaveDraft: () => {
             this._saveDraft();
-            if (this.model.draftKey === Composer.NEW_TOPIC_KEY) {
-              this.currentUser.set("has_topic_draft", true);
-            }
             this.model.clearState();
             this.close();
             resolve();
@@ -1254,10 +1251,12 @@ export default Controller.extend({
           );
         }
       } else {
-        this._saveDraftPromise = model.saveDraft().finally(() => {
-          this._lastDraftSaved = Date.now();
-          this._saveDraftPromise = null;
-        });
+        this._saveDraftPromise = model
+          .saveDraft(this.currentUser)
+          .finally(() => {
+            this._lastDraftSaved = Date.now();
+            this._saveDraftPromise = null;
+          });
       }
     }
   },

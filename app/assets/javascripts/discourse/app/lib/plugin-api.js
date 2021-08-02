@@ -37,6 +37,7 @@ import DiscourseBanner from "discourse/components/discourse-banner";
 import KeyboardShortcuts from "discourse/lib/keyboard-shortcuts";
 import Sharing from "discourse/lib/sharing";
 import { addAdvancedSearchOptions } from "discourse/components/search-advanced-options";
+import { addCardClickListenerSelector } from "discourse/mixins/card-contents-base";
 import { addCategorySortCriteria } from "discourse/components/edit-category-settings";
 import { addDecorator } from "discourse/widgets/post-cooked";
 import { addDiscoveryQueryParam } from "discourse/controllers/discovery-sortable";
@@ -76,7 +77,7 @@ import { addSearchResultsCallback } from "discourse/lib/search";
 import { addSearchSuggestion } from "discourse/widgets/search-menu-results";
 
 // If you add any methods to the API ensure you bump up this number
-const PLUGIN_API_VERSION = "0.11.7";
+const PLUGIN_API_VERSION = "0.12.0";
 
 class PluginApi {
   constructor(version, container) {
@@ -1082,6 +1083,15 @@ class PluginApi {
    */
   addCategorySortCriteria(criteria) {
     addCategorySortCriteria(criteria);
+  }
+
+  /**
+   * Card contents mixin will add a listener to elements matching this selector
+   * that will open card contents when a mention of div with the correct data attribute
+   * is clicked
+   */
+  addCardClickListenerSelector(selector) {
+    addCardClickListenerSelector(selector);
   }
 
   /**
