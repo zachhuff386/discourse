@@ -123,6 +123,9 @@
                           uploadIcon=uploadIcon
                           isCancellable=isCancellable
                           uploadProgress=uploadProgress
+                          uppyInstance=uppyInstance
+                          uploadWithUppy=(action "uploadWithUppy")
+                          startUppy=(action "startUppy")
                           groupsMentioned=(action "groupsMentioned")
                           cannotSeeMention=(action "cannotSeeMention")
                           importQuote=(action "importQuote")
@@ -130,6 +133,7 @@
                           showToolbar=showToolbar
                           afterRefresh=(action "afterRefresh")
                           focusTarget=focusTarget}}
+        <input type="file" id="file-uploader-uppy" multiple>
 
         {{plugin-outlet name="composer-after-composer-editor" connectorTagName="" args=(hash model=model)}}
         <div class="submit-panel">

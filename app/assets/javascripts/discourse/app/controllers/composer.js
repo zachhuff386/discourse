@@ -372,6 +372,18 @@ export default Controller.extend({
   },
 
   actions: {
+    uploadWithUppy() {
+      document.getElementById("file-uploader-uppy").click();
+    },
+
+    startUppy() {
+      // this.uppyInstance.resumeAll();
+      this.uppyInstance.upload().then((result) => {
+        // eslint-disable-next-line no-console
+        console.log(result);
+      });
+    },
+
     togglePreview() {
       this.toggleProperty("showPreview");
     },

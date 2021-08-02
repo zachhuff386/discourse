@@ -9,7 +9,11 @@ class UploadsController < ApplicationController
   protect_from_forgery except: :show
 
   before_action :is_asset_path, :apply_cdn_headers, only: [:show, :show_short, :show_secure]
-  before_action :external_store_check, only: [:show_secure, :generate_presigned_put, :complete_external_upload]
+  before_action :external_store_check, only: [
+    :show_secure, :generate_presigned_put, :complete_external_upload, :create_multipart_upload,
+    :list_multipart_upload_parts, :complete_multipart_upload, :presign_upload_part, :batch_presign_upload_parts,
+    :abort_multipart_upload
+  ]
 
   SECURE_REDIRECT_GRACE_SECONDS = 5
   PRESIGNED_PUT_RATE_LIMIT_PER_MINUTE = 5
@@ -268,6 +272,60 @@ class UploadsController < ApplicationController
         render_json_error(I18n.t("upload.failed"), status: 422)
       end
     end
+  end
+
+  def create_multipart_upload
+    multipart_upload = Discourse.store.create_multipart_upload(
+      params[:filename], params[:content_type]
+    )
+    render json: { upload_id: multipart_upload[:upload_id], key: multipart_upload[:key] }
+  end
+
+  def list_multipart_upload_parts
+    return render_404 if !Discourse.store.external?
+    parts = Discourse.store.list_multipart_upload_parts(upload_id: params[:uploadId], key: params[:key])
+    render json: { parts: parts }
+  end
+
+  def presign_upload_part
+    url = Discourse.store.presign_multipart_upload_part(
+      upload_id: params[:upload_id],
+      key: params[:key],
+      part_number: params[:part_number]
+    )
+    render json: { url: url }
+  end
+
+  def batch_presign_upload_parts
+    presigned_urls = {}
+    params[:part_numbers].each do |part_number|
+      presigned_urls[part_number] = Discourse.store.presign_multipart_upload_part(
+        upload_id: params[:upload_id],
+        key: params[:key],
+        part_number: part_number
+      )
+    end
+
+    render json: { presigned_urls: presigned_urls }
+  end
+
+  def abort_multipart_upload
+    # TODO (martin): Uh...write this code
+  end
+
+  def complete_multipart_upload
+    params.permit(:key, :uploadId)
+
+    # TODO (martin): Another uppy-specific thing of param munging
+    parts = params[:parts].each(&:permit!).map do |part|
+      { part_number: part[:PartNumber], etag: part[:ETag] }
+    end
+    Discourse.store.complete_multipart_upload(
+      upload_id: params[:uploadId],
+      key: params[:key],
+      parts: parts
+    )
+    render json: success_json
   end
 
   protected

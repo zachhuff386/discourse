@@ -6,6 +6,9 @@ import {
   getUploadMarkdown,
   validateUploadedFiles,
 } from "discourse/lib/uploads";
+import Uppy from "@uppy/core";
+import getUrl from "discourse-common/lib/get-url";
+import AwsS3Multipart from "@uppy/aws-s3-multipart";
 import {
   cacheShortUploadUrl,
   resolveAllShortUrls,
@@ -38,7 +41,6 @@ import { ajax } from "discourse/lib/ajax";
 import bootbox from "bootbox";
 import discourseDebounce from "discourse-common/lib/debounce";
 import { findRawTemplate } from "discourse-common/lib/raw-templates";
-import getURL from "discourse-common/lib/get-url";
 import { iconHTML } from "discourse-common/lib/icon-library";
 import { isTesting } from "discourse-common/config/environment";
 import { loadOneboxes } from "discourse/lib/load-oneboxes";
@@ -253,6 +255,7 @@ export default Component.extend({
     }
 
     this._bindUploadTarget();
+    this._bindUppyUploadTarget();
     this.appEvents.trigger("composer:will-open");
   },
 
@@ -666,6 +669,222 @@ export default Component.extend({
     });
   },
 
+  _bindUppyUploadTarget() {
+    const uppy = new Uppy({
+      autoProceed: true,
+      debug: true,
+    });
+    this.set("uppyInstance", uppy);
+    const csrfToken = this._csrfToken();
+
+    uppy.use(AwsS3Multipart, {
+      batchPartPresign: true,
+      limit: 20,
+      createMultipartUpload(file) {
+        return fetch("/uploads/create-multipart-upload", {
+          method: "post",
+          headers: {
+            accept: "application/json",
+            "content-type": "application/json",
+            "X-CSRF-Token": csrfToken,
+          },
+          body: JSON.stringify({
+            filename: file.name,
+            content_type: file.type,
+          }),
+        })
+          .then((response) => {
+            // Parse the JSON response.
+            return response.json();
+          })
+          .then((data) => {
+            // Return an object in the correct shape.
+            return {
+              uploadId: data.upload_id,
+              key: data.key,
+            };
+          });
+      },
+
+      batchPrepareUploadParts(file, partData) {
+        return ajax(getUrl("/uploads/batch-presign-multipart-upload-parts"), {
+          type: "POST",
+          data: {
+            part_numbers: partData.partNumbers,
+            key: partData.key,
+            upload_id: partData.uploadId,
+          },
+        }).then((data) => {
+          // Return an object in the correct shape.
+          return { presignedUrls: data.presigned_urls };
+        });
+        // return fetch("/uploads/batch-presign-multipart-upload-parts", {
+        //   method: "post",
+        //   headers: {
+        //     accept: "application/json",
+        //     "content-type": "application/json",
+        //     "X-CSRF-Token": csrfToken,
+        //   },
+        //   body: JSON.stringify({
+        //     part_numbers: partData.partNumbers,
+        //     key: partData.key,
+        //     upload_id: partData.uploadId,
+        //   }),
+        // })
+        //   .then((response) => {
+        //     // Parse the JSON response.
+        //     return response.json();
+        //   })
+        //   .then((data) => {
+        //     // Return an object in the correct shape.
+        //     return { presignedUrls: data.presigned_urls };
+        //   });
+      },
+
+      prepareUploadPart(file, partData) {
+        return fetch("/uploads/presign-multipart-upload-part", {
+          method: "post",
+          headers: {
+            accept: "application/json",
+            "content-type": "application/json",
+            "X-CSRF-Token": csrfToken,
+          },
+          body: JSON.stringify({
+            part_number: partData.number,
+            key: partData.key,
+            upload_id: partData.uploadId,
+          }),
+        })
+          .then((response) => {
+            // Parse the JSON response.
+            return response.json();
+          })
+          .then((data) => {
+            // Return an object in the correct shape.
+            return { url: data.url };
+          });
+      },
+
+      listParts(file, data) {
+        return fetch("/uploads/list-multipart-upload-parts", {
+          method: "post",
+          headers: {
+            accept: "application/json",
+            "content-type": "application/json",
+            "X-CSRF-Token": csrfToken,
+          },
+          body: JSON.stringify(data),
+        })
+          .then((response) => {
+            // Parse the JSON response.
+            return response.json();
+          })
+          .then((responseData) => {
+            // Return an object in the correct shape.
+            return responseData.parts;
+          });
+      },
+
+      completeMultipartUpload(file, data) {
+        return fetch("/uploads/complete-multipart-upload", {
+          method: "post",
+          headers: {
+            accept: "application/json",
+            "content-type": "application/json",
+            "X-CSRF-Token": csrfToken,
+          },
+          body: JSON.stringify(data),
+        })
+          .then((response) => {
+            // Parse the JSON response.
+            return response.json();
+          })
+          .then((responseData) => {
+            // Return an object in the correct shape.
+            return { url: responseData.url };
+          });
+      },
+    });
+
+    uppy.on("upload", (data) => {
+      const files = data.fileIDs.map((fileId) => uppy.getFile(fileId));
+      const opts = {
+        user: this.currentUser,
+        siteSettings: this.siteSettings,
+        isPrivateMessage: false,
+        allowStaffToUploadAnyFileInPm: this.siteSettings
+          .allow_staff_to_upload_any_file_in_pm,
+      };
+
+      files.forEach((file) => {
+        const isUploading = validateUploadedFiles([file], opts);
+        this.setProperties({ uploadProgress: 0, isUploading });
+        let fileData = { files: [file] };
+        this._setUploadPlaceholderSend(fileData);
+        this.appEvents.trigger("composer:insert-text", this.uploadPlaceholder);
+      });
+    });
+
+    uppy.on("upload-success", (file, response) => {
+      let upload = response.body;
+      this._setUploadPlaceholderDone({ files: [file] });
+      const markdown = uploadMarkdownResolvers.reduce(
+        (md, resolver) => resolver(upload) || md,
+        getUploadMarkdown(upload)
+      );
+
+      cacheShortUploadUrl(upload.short_url, upload);
+      this.appEvents.trigger(
+        "composer:replace-text",
+        this.uploadPlaceholder.trim(),
+        markdown
+      );
+    });
+
+    uppy.on("progress", (progress) => {
+      // eslint-disable-next-line no-console
+      console.log(progress);
+      this.set("uploadProgress", progress);
+    });
+
+    const fileInput = document.getElementById("file-uploader-uppy");
+
+    fileInput.addEventListener("change", (event) => {
+      const files = Array.from(event.target.files);
+
+      files.forEach((file) => {
+        try {
+          uppy.addFile({
+            source: "file input",
+            name: file.name,
+            type: file.type,
+            data: file,
+          });
+        } catch (err) {
+          if (err.isRestriction) {
+            // handle restrictions
+            // eslint-disable-next-line no-console
+            console.log("Restriction error:", err);
+          } else {
+            // handle other errors
+            // eslint-disable-next-line no-console
+            console.error(err);
+          }
+        }
+      });
+    });
+
+    uppy.on("file-removed", () => {
+      fileInput.value = null;
+      this._resetUpload(true);
+    });
+
+    uppy.on("complete", () => {
+      fileInput.value = null;
+      this._resetUpload(false);
+    });
+  },
+
   _bindUploadTarget() {
     this._unbindUploadTarget(); // in case it's still bound, let's clean it up first
     this._pasted = false;
@@ -675,7 +894,7 @@ export default Component.extend({
     $.blueimp.fileupload.prototype.processActions = uploadProcessorActions;
 
     $element.fileupload({
-      url: getURL(`/uploads.json?client_id=${this.messageBus.clientId}`),
+      url: getUrl(`/uploads.json?client_id=${this.messageBus.clientId}`),
       dataType: "json",
       pasteZone: $element,
       processQueue: uploadProcessorQueue,
@@ -968,6 +1187,10 @@ export default Component.extend({
     );
   },
 
+  _csrfToken() {
+    return document.querySelector("meta[name='csrf-token']").content;
+  },
+
   _isQuote(element) {
     return element.tagName === "ASIDE" && element.classList.contains("quote");
   },
@@ -997,6 +1220,13 @@ export default Component.extend({
       this.togglePreview();
     },
 
+    uploadWithUppy() {
+      this.uploadWithUppy(this.uppyInstance);
+    },
+    startUppy() {
+      this.startUppy(this.uppyInstance);
+    },
+
     extraButtons(toolbar) {
       toolbar.addButton({
         id: "quote",
@@ -1024,6 +1254,24 @@ export default Component.extend({
         title: "composer.options",
         sendAction: this.onExpandPopupMenuOptions.bind(this),
         popupMenu: true,
+      });
+
+      // uppy
+      toolbar.addButton({
+        id: "uploadUppy",
+        group: "insertions",
+        icon: "crosshairs",
+        title: "composer.uppy_upload",
+        sendAction: this.uploadWithUppy,
+      });
+
+      // uppy
+      toolbar.addButton({
+        id: "startUppy",
+        group: "insertions",
+        icon: "facebook",
+        title: "composer.uppy_upload",
+        sendAction: this.startUppy,
       });
     },
 
