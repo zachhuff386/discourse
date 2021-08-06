@@ -680,8 +680,7 @@ export default Component.extend({
     const csrfToken = this._csrfToken();
 
     uppy.use(AwsS3Multipart, {
-      batchPartPresign: true,
-      limit: 20,
+      limit: 5,
       createMultipartUpload(file) {
         return fetch("/uploads/create-multipart-upload", {
           method: "post",
@@ -708,7 +707,7 @@ export default Component.extend({
           });
       },
 
-      batchPrepareUploadParts(file, partData) {
+      prepareUploadParts(file, partData) {
         return ajax(getUrl("/uploads/batch-presign-multipart-upload-parts"), {
           type: "POST",
           data: {
@@ -741,30 +740,6 @@ export default Component.extend({
         //     // Return an object in the correct shape.
         //     return { presignedUrls: data.presigned_urls };
         //   });
-      },
-
-      prepareUploadPart(file, partData) {
-        return fetch("/uploads/presign-multipart-upload-part", {
-          method: "post",
-          headers: {
-            accept: "application/json",
-            "content-type": "application/json",
-            "X-CSRF-Token": csrfToken,
-          },
-          body: JSON.stringify({
-            part_number: partData.number,
-            key: partData.key,
-            upload_id: partData.uploadId,
-          }),
-        })
-          .then((response) => {
-            // Parse the JSON response.
-            return response.json();
-          })
-          .then((data) => {
-            // Return an object in the correct shape.
-            return { url: data.url };
-          });
       },
 
       listParts(file, data) {
