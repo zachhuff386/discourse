@@ -143,6 +143,7 @@ export default Component.extend({
       this._xhr._userCancelled = true;
       this._xhr.abort();
     }
+    this.uppyInstance.cancelAll();
     this._resetUpload(true);
   },
 
@@ -795,7 +796,11 @@ export default Component.extend({
 
       files.forEach((file) => {
         const isUploading = validateUploadedFiles([file], opts);
-        this.setProperties({ uploadProgress: 0, isUploading });
+        this.setProperties({
+          uploadProgress: 0,
+          isUploading,
+          isCancellable: true,
+        });
         let fileData = { files: [file] };
         this._setUploadPlaceholderSend(fileData);
         this.appEvents.trigger("composer:insert-text", this.uploadPlaceholder);
