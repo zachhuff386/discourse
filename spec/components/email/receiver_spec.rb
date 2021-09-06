@@ -1064,11 +1064,22 @@ describe Email::Receiver do
         end
 
         it "does not say the email was forwarded by the original sender, it says the email is forwarded by the group" do
-          expect { process(:forwarded_by_group_to_group) }.to change { User.where(staged: true).count }.by(2)
+          expect { process(:forwarded_by_group_to_group) }.to change { User.where(staged: true).count }.by(4)
           topic = Topic.last
           forwarded_small_post = topic.ordered_posts.last
           expect(forwarded_small_post.action_code).to eq("forwarded")
           expect(forwarded_small_post.user).to eq(User.find_by_email("team@somesmtpaddress.com"))
+        end
+
+        it "keeps the CC addresses from the forwarded email" do
+          expect { process(:forwarded_by_group_to_group) }.to change { User.where(staged: true).count }.by(4)
+          topic = Topic.last
+          cc_user1 = User.find_by_email("terry@ccland.com")
+          cc_user2 = User.find_by_email("don@mmtest.com")
+          expect(cc_user1).not_to eq(nil)
+          expect(cc_user2).not_to eq(nil)
+          expect(topic.topic_allowed_users.pluck(:user_id)).to include(cc_user1.id)
+          expect(topic.incoming_email.first.cc_addresses).to eq("terry@ccland.com;don@mmtest.com")
         end
 
         context "when staged user for the team email already exists" do
@@ -1082,7 +1093,7 @@ describe Email::Receiver do
           end
 
           it "uses that and does not create another staged user" do
-            expect { process(:forwarded_by_group_to_group) }.to change { User.where(staged: true).count }.by(1)
+            expect { process(:forwarded_by_group_to_group) }.to change { User.where(staged: true).count }.by(3)
             topic = Topic.last
             forwarded_small_post = topic.ordered_posts.last
             expect(forwarded_small_post.action_code).to eq("forwarded")
