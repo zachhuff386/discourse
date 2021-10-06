@@ -31,7 +31,7 @@ module DiscourseDev
       record
     end
 
-    def populate!(ignore_current_count: false)
+    def populate!(ignore_current_count: false, can_retry: true)
       unless Discourse.allow_dev_populate?
         raise 'To run this rake task in a production site, set the value of `ALLOW_DEV_POPULATE` environment variable to "1"'
       end
@@ -63,6 +63,15 @@ module DiscourseDev
       puts unless type == :post
       DiscourseEvent.trigger(:after_populate_dev_records, records, type)
       records
+    rescue I18n::MissingTranslationData => e
+      if e.message =~ /faker/ && can_retry
+        puts "Reloading I18n locales..."
+        I18n.reload!
+        I18n.init_accelerator!(overrides_enabled: ENV['DISABLE_TRANSLATION_OVERRIDES'] != '1')
+        populate!(ignore_current_count: ignore_current_count, can_retry: false)
+      else
+        raise I18n::MissingTranslationData
+      end
     end
 
     def current_count
