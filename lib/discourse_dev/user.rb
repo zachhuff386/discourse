@@ -2,6 +2,7 @@
 
 require 'discourse_dev/record'
 require 'faker'
+require 'discourse_dev_assets'
 
 module DiscourseDev
   class User < Record
