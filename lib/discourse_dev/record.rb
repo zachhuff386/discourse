@@ -70,7 +70,7 @@ module DiscourseDev
         I18n.init_accelerator!(overrides_enabled: ENV['DISABLE_TRANSLATION_OVERRIDES'] != '1')
         populate!(ignore_current_count: ignore_current_count, can_retry: false)
       else
-        raise I18n::MissingTranslationData
+        raise e
       end
     end
 
