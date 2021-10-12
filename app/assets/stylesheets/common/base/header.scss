@@ -235,6 +235,7 @@
     grid-template-columns: auto minmax(2em, 1fr); // min must be as wide as ellipsis
     align-items: baseline;
     .header-title {
+      display: flex;
       grid-area: title;
     }
     .categories-wrapper {

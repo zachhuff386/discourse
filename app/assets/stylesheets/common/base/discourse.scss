@@ -799,7 +799,8 @@ table {
 
 .topic-statuses {
   // avoid adding margin/padding on this parent; sometimes it appears as an empty container
-  float: left;
+  display: inline-block;
+  flex-shrink: 0; // if we allow this to shrink, it may wrap
   .topic-status {
     margin: 0;
     display: inline-flex;

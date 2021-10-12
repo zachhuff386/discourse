@@ -8,13 +8,13 @@
   {{/if}}
   <div class="stream-topic-details">
     <div class="stream-topic-title">
-      {{topic-status topic=@item disableActions=true}}
+      {{~topic-status topic=@item disableActions=true~}}
       <span class="title">
-        {{#if @item.postUrl}}
-          <a href={{@item.postUrl}}>{{html-safe @item.title}}</a>
+        {{~#if @item.postUrl}}
+          <a href={{@item.postUrl}}>{{~html-safe @item.title~}}</a>
         {{else}}
-          {{html-safe @item.title}}
-        {{/if}}
+          {{~html-safe @item.title~}}
+        {{/if~}}
       </span>
     </div>
     <div class="category">{{category-link @item.category}}</div>

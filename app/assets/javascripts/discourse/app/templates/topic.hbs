@@ -74,9 +74,9 @@
             {{/unless}}
 
             {{#if model.details.loaded}}
-              {{topic-status topic=model}}
+              {{~topic-status topic=model~}}
               <a href={{model.url}} {{action "jumpTop"}} class="fancy-title">
-                {{html-safe model.fancyTitle}}
+                {{~html-safe model.fancyTitle}}
               </a>
             {{/if}}
 

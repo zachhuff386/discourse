@@ -11,15 +11,15 @@
     {{/if}}
 
     <a href={{post.url}} {{action "logClick" post.topic_id}} class="search-link" role="heading" aria-level="2">
-      {{raw "topic-status" topic=post.topic showPrivateMessageIcon=true}}
+      {{~raw "topic-status" topic=post.topic showPrivateMessageIcon=true~}}
       <span class="topic-title">
-        {{#if post.useTopicTitleHeadline}}
-          {{html-safe post.topicTitleHeadline}}
+        {{~#if post.useTopicTitleHeadline}}
+          {{~html-safe post.topicTitleHeadline~}}
         {{else}}
           {{#highlight-search highlight=highlightQuery}}
-            {{html-safe post.topic.fancyTitle}}
+            {{~html-safe post.topic.fancyTitle~}}
           {{/highlight-search}}
-        {{/if}}
+        {{/if~}}
       </span>
     </a>
 

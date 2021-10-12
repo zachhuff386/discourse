@@ -20,7 +20,7 @@
               onclick={{action "linkClick"}}
               data-title={{result.fancy_title}}
             >
-              {{topic-status topic=result disableActions=true}}
+              {{~topic-status topic=result disableActions=true~}}
               {{replace-emoji result.fancy_title}}
               <div class="search-category">
                 {{#if result.category.parentCategory}}

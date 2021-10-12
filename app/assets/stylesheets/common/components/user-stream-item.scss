@@ -39,6 +39,10 @@
     font-size: $font-down-2;
   }
 
+  .stream-topic-title {
+    display: flex;
+  }
+
   .notification .time {
     margin-left: auto;
     float: none;
@@ -67,7 +71,7 @@
 
   .title {
     @include ellipsis;
-    display: block;
+    display: inline;
   }
 
   .name {
