@@ -1078,6 +1078,7 @@ en:
       logging_in_as: Logging in as %{username}
       confirm_button: Finish Login
     no_trust_level: "Sorry, you do not have the required trust level to access the user API"
+    no_trust_level_discourse_hub: "Sorry, you do not have the required user trust level to log in with DiscourseHub. Please contact site administrators and mention this error."
     generic_error: "Sorry, we are unable to issue user API keys, this feature may be disabled by the site admin"
     scopes:
       message_bus: "Live updates"

@@ -33,6 +33,7 @@ class UserApiKeysController < ApplicationController
 
     unless meets_tl?
       @no_trust_level = true
+      @is_discourse_hub_app = true if is_discourse_hub_app?
       return
     end
 
@@ -195,6 +196,10 @@ class UserApiKeysController < ApplicationController
 
   def meets_tl?
     current_user.staff? || current_user.trust_level >= SiteSetting.min_trust_level_for_user_api_key
+  end
+
+  def is_discourse_hub_app?
+    params[:discourse_app] == '1'
   end
 
   def one_time_password(public_key, username)

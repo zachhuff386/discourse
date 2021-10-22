@@ -1,6 +1,10 @@
 <h1><%= t "user_api_key.title" %></h1>
 <div class='authorize-api-key'>
-<% if @no_trust_level %>
+<% if @no_trust_level && @is_discourse_hub_app %>
+  <h3>
+  <%= t("user_api_key.no_trust_level_discourse_hub") %>
+  </h3>
+<% elsif @no_trust_level && ! @is_discourse_hub_app %>
   <h3>
   <%= t("user_api_key.no_trust_level") %>
   </h3>
