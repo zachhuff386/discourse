@@ -79,6 +79,7 @@ class Auth::DefaultCurrentUserProvider
   def initialize(env)
     @env = env
     @request = Rack::Request.new(env)
+    @cookie_jar = ActionDispatch::Request.new(env).cookie_jar
   end
 
   # our current user, return nil if none is found
@@ -209,7 +210,7 @@ class Auth::DefaultCurrentUserProvider
     @env[CURRENT_USER_KEY] = current_user
   end
 
-  def refresh_session(user, session, cookies)
+  def refresh_session(user, session)
     # if user was not loaded, no point refreshing session
     # it could be an anonymous path, this would add cost
     return if is_api? || !@env.key?(CURRENT_USER_KEY)
@@ -223,18 +224,18 @@ class Auth::DefaultCurrentUserProvider
         if @user_token.rotate!(user_agent: @env['HTTP_USER_AGENT'],
                                client_ip: @request.ip,
                                path: @env['REQUEST_PATH'])
-          cookies[TOKEN_COOKIE] = cookie_hash(@user_token.unhashed_auth_token, user)
+          set_auth_cookie!(@user_token.unhashed_auth_token, user)
           DiscourseEvent.trigger(:user_session_refreshed, user)
         end
       end
     end
 
-    if !user && cookies.key?(TOKEN_COOKIE)
-      cookies.delete(TOKEN_COOKIE)
+    if !user && @cookie_jar.key?(TOKEN_COOKIE)
+      @cookie_jar.delete(TOKEN_COOKIE)
     end
   end
 
-  def log_on_user(user, session, cookies, opts = {})
+  def log_on_user(user, session, opts = {})
     @user_token = UserAuthToken.generate!(
       user_id: user.id,
       user_agent: @env['HTTP_USER_AGENT'],
@@ -243,7 +244,7 @@ class Auth::DefaultCurrentUserProvider
       staff: user.staff?,
       impersonate: opts[:impersonate])
 
-    cookies[TOKEN_COOKIE] = cookie_hash(@user_token.unhashed_auth_token, user)
+    set_auth_cookie!(@user_token.unhashed_auth_token, user)
     user.unstage!
     make_developer_admin(user)
     enable_bootstrap_mode(user)
@@ -253,31 +254,20 @@ class Auth::DefaultCurrentUserProvider
     @env[CURRENT_USER_KEY] = user
   end
 
-  def cookie_hash(unhashed_auth_token, user)
+  def set_auth_cookie!(unhashed_auth_token, user)
     data = {
       token: unhashed_auth_token,
       user_id: user.id,
       trust_level: user.trust_level,
       issued_at: Time.zone.now.to_i
     }
-    temp_request = ActionDispatch::Request.new(@env)
-    hash = temp_request.cookie_jar.encrypted[TOKEN_COOKIE] = {
+    @cookie_jar.encrypted[TOKEN_COOKIE] = {
       value: data,
       httponly: true,
-      secure: SiteSetting.force_https
+      expires: SiteSetting.maximum_session_age.hours.from_now,
+      secure: SiteSetting.force_https,
+      same_site: SiteSetting.same_site_cookies != "Disabled" ? SiteSetting.same_site_cookies : nil
     }
-
-    if SiteSetting.persistent_sessions
-      hash[:expires] = SiteSetting.maximum_session_age.hours.from_now
-    end
-
-    if SiteSetting.same_site_cookies != "Disabled"
-      hash[:same_site] = SiteSetting.same_site_cookies
-    else
-      hash.delete(:same_site)
-    end
-
-    hash
   end
 
   def make_developer_admin(user)
