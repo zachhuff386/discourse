@@ -1,6 +1,5 @@
 import {
   applyPretender,
-  exists,
   resetSite,
 } from "discourse/tests/helpers/qunit-helpers";
 import pretender, {
@@ -26,7 +25,6 @@ import User from "discourse/models/user";
 import bootbox from "bootbox";
 import { buildResolver } from "discourse-common/resolver";
 import { createHelperContext } from "discourse-common/lib/helpers";
-import deprecated from "discourse-common/lib/deprecated";
 import { flushMap } from "discourse/models/store";
 import { registerObjects } from "discourse/pre-initializers/inject-discourse-objects";
 import sinon from "sinon";

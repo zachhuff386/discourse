@@ -2,7 +2,6 @@ import Controller, { inject as controller } from "@ember/controller";
 import EmberObject, { action } from "@ember/object";
 import I18n from "I18n";
 import bootbox from "bootbox";
-import deprecated from "discourse-common/lib/deprecated";
 import discourseComputed from "discourse-common/utils/decorators";
 
 const Tab = EmberObject.extend({
