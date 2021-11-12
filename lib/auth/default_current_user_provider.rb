@@ -41,7 +41,7 @@ class Auth::DefaultCurrentUserProvider
   COOKIE_ATTEMPTS_PER_MIN ||= 10
   BAD_TOKEN ||= "_DISCOURSE_BAD_TOKEN"
 
-  TOKEN_SIZE = 32
+  TOKEN_SIZE ||= 32
 
   PARAMETER_API_PATTERNS ||= [
     RouteMatcher.new(
@@ -79,7 +79,6 @@ class Auth::DefaultCurrentUserProvider
   def initialize(env)
     @env = env
     @request = Rack::Request.new(env)
-    @cookie_jar = ActionDispatch::Request.new(env).cookie_jar
   end
 
   # our current user, return nil if none is found
@@ -210,7 +209,7 @@ class Auth::DefaultCurrentUserProvider
     @env[CURRENT_USER_KEY] = current_user
   end
 
-  def refresh_session(user, session)
+  def refresh_session(user, session, cookie_jar)
     # if user was not loaded, no point refreshing session
     # it could be an anonymous path, this would add cost
     return if is_api? || !@env.key?(CURRENT_USER_KEY)
@@ -224,18 +223,18 @@ class Auth::DefaultCurrentUserProvider
         if @user_token.rotate!(user_agent: @env['HTTP_USER_AGENT'],
                                client_ip: @request.ip,
                                path: @env['REQUEST_PATH'])
-          set_auth_cookie!(@user_token.unhashed_auth_token, user)
+          set_auth_cookie!(@user_token.unhashed_auth_token, user, cookie_jar)
           DiscourseEvent.trigger(:user_session_refreshed, user)
         end
       end
     end
 
-    if !user && @cookie_jar.key?(TOKEN_COOKIE)
-      @cookie_jar.delete(TOKEN_COOKIE)
+    if !user && cookie_jar.key?(TOKEN_COOKIE)
+      cookie_jar.delete(TOKEN_COOKIE)
     end
   end
 
-  def log_on_user(user, session, opts = {})
+  def log_on_user(user, session, cookie_jar, opts = {})
     @user_token = UserAuthToken.generate!(
       user_id: user.id,
       user_agent: @env['HTTP_USER_AGENT'],
@@ -244,7 +243,7 @@ class Auth::DefaultCurrentUserProvider
       staff: user.staff?,
       impersonate: opts[:impersonate])
 
-    set_auth_cookie!(@user_token.unhashed_auth_token, user)
+    set_auth_cookie!(@user_token.unhashed_auth_token, user, cookie_jar)
     user.unstage!
     make_developer_admin(user)
     enable_bootstrap_mode(user)
@@ -254,17 +253,18 @@ class Auth::DefaultCurrentUserProvider
     @env[CURRENT_USER_KEY] = user
   end
 
-  def set_auth_cookie!(unhashed_auth_token, user)
+  def set_auth_cookie!(unhashed_auth_token, user, cookie_jar)
     data = {
       token: unhashed_auth_token,
       user_id: user.id,
       trust_level: user.trust_level,
       issued_at: Time.zone.now.to_i
     }
-    @cookie_jar.encrypted[TOKEN_COOKIE] = {
+
+    cookie_jar.encrypted[TOKEN_COOKIE] = {
       value: data,
       httponly: true,
-      expires: SiteSetting.maximum_session_age.hours.from_now,
+      expires: SiteSetting.persistent_sessions ? SiteSetting.maximum_session_age.hours.from_now : nil,
       secure: SiteSetting.force_https,
       same_site: SiteSetting.same_site_cookies != "Disabled" ? SiteSetting.same_site_cookies : nil
     }

@@ -9,9 +9,13 @@ describe Auth::DefaultCurrentUserProvider do
   let(:user) { Fabricate(:user) }
 
   class TestProvider < Auth::DefaultCurrentUserProvider
-    attr_reader :env, :cookie_jar
+    attr_reader :env
     def initialize(env)
       super(env)
+    end
+
+    def cookie_jar
+      ActionDispatch::Request.new(@env).cookie_jar
     end
   end
 
@@ -19,6 +23,28 @@ describe Auth::DefaultCurrentUserProvider do
     opts ||= { method: "GET" }
     env = create_request_env(path: url).merge(opts)
     TestProvider.new(env)
+  end
+
+  def get_cookie_info(cookie_jar, name)
+    headers = {}
+    cookie_jar.always_write_cookie = true
+    cookie_jar.write(headers)
+
+    header = headers["Set-Cookie"]
+    return if header.nil?
+
+    info = {}
+
+    line = header.split("\n").find { |l| l.start_with?("#{name}=") }
+    parts = line.split(";").map(&:strip)
+
+    info[:value] = parts.shift.split("=")[1]
+    parts.each do |p|
+      key, value = p.split("=")
+      info[key.downcase.to_sym] = value || true
+    end
+
+    info
   end
 
   it "can be used to pretend that a user doesn't exist" do
@@ -236,7 +262,7 @@ describe Auth::DefaultCurrentUserProvider do
   describe "#current_user" do
     let(:cookie) do
       new_provider = provider('/')
-      new_provider.log_on_user(user, {}, {})
+      new_provider.log_on_user(user, {}, new_provider.cookie_jar)
       new_provider.cookie_jar["_t"]
     end
 
@@ -323,9 +349,11 @@ describe Auth::DefaultCurrentUserProvider do
     SiteSetting.persistent_sessions = false
 
     @provider = provider('/')
-    @provider.log_on_user(user, {}, {})
+    @provider.log_on_user(user, {}, @provider.cookie_jar)
 
-    expect(@provider.cookie_jar["_t"][:expires]).to eq(nil)
+    info = get_cookie_info(@provider.cookie_jar, "_t")
+
+    expect(info[:expires]).to eq(nil)
   end
 
   it "v0 of auth cookie is still acceptable" do
@@ -338,7 +366,7 @@ describe Auth::DefaultCurrentUserProvider do
   it "correctly rotates tokens" do
     SiteSetting.maximum_session_age = 3
     @provider = provider('/')
-    @provider.log_on_user(user, {}, {})
+    @provider.log_on_user(user, {}, @provider.cookie_jar)
 
     cookie = @provider.cookie_jar["_t"]
     unhashed_token = decrypt_auth_cookie(cookie)[:token]
@@ -358,7 +386,7 @@ describe Auth::DefaultCurrentUserProvider do
     token.reload
     expect(token.auth_token_seen).to eq(true)
 
-    provider2.refresh_session(user, {}, {})
+    provider2.refresh_session(user, {}, provider2.cookie_jar)
     expect(
       decrypt_auth_cookie(provider2.cookie_jar["_t"])[:token]
     ).not_to eq(unhashed_token)
@@ -378,7 +406,7 @@ describe Auth::DefaultCurrentUserProvider do
     provider2 = provider("/", "HTTP_COOKIE" => "_t=#{cookie}")
     expect(provider2.current_user.id).to eq(user.id)
 
-    provider2.refresh_session(user, {}, {})
+    provider2.refresh_session(user, {}, provider2.cookie_jar)
 
     token.reload
 
@@ -403,18 +431,18 @@ describe Auth::DefaultCurrentUserProvider do
 
     it "fires event when updating last seen" do
       @provider = provider('/')
-      @provider.log_on_user(user, {}, {})
+      @provider.log_on_user(user, {}, @provider.cookie_jar)
       cookie = @provider.cookie_jar["_t"]
       unhashed_token = decrypt_auth_cookie(cookie)[:token]
       freeze_time 20.minutes.from_now
       provider2 = provider("/", "HTTP_COOKIE" => "_t=#{cookie}")
-      provider2.refresh_session(user, {}, {})
+      provider2.refresh_session(user, {}, provider2.cookie_jar)
       expect(@refreshes).to eq(1)
     end
 
     it "does not fire an event when last seen does not update" do
       @provider = provider('/')
-      @provider.log_on_user(user, {}, {})
+      @provider.log_on_user(user, {}, @provider.cookie_jar)
       cookie = @provider.cookie_jar["_t"]
       unhashed_token = decrypt_auth_cookie(cookie)[:token]
       freeze_time 2.minutes.from_now
@@ -439,7 +467,7 @@ describe Auth::DefaultCurrentUserProvider do
         issued_at: 5.minutes.ago
       )
 
-      provider('/').log_on_user(user, {}, {})
+      provider('/').tap { |p| p.log_on_user(user, {}, p.cookie_jar) }
 
       RateLimiter.new(nil, "cookie_auth_10.0.0.1", 10, 60).clear!
       RateLimiter.new(nil, "cookie_auth_10.0.0.2", 10, 60).clear!
@@ -484,13 +512,13 @@ describe Auth::DefaultCurrentUserProvider do
     )
     @provider = provider('/')
     @provider.cookie_jar["_t"] = { value: bad_cookie }
-    provider('/', @provider.env).refresh_session(nil, {}, {})
+    provider('/', @provider.env).refresh_session(nil, {}, @provider.cookie_jar)
     expect(@provider.cookie_jar.key?("_t")).to eq(false)
   end
 
   it "logging on user always creates a new token" do
-    provider('/').log_on_user(user, {}, {})
-    provider('/').log_on_user(user, {}, {})
+    provider('/').tap { |p| p.log_on_user(user, {}, p.cookie_jar) }
+    provider('/').tap { |p| p.log_on_user(user, {}, p.cookie_jar) }
 
     expect(UserAuthToken.where(user_id: user.id).count).to eq(2)
   end
@@ -513,7 +541,7 @@ describe Auth::DefaultCurrentUserProvider do
     expect(UserAuthToken.where(auth_token: (1..3).map { |i| "abc#{i}" }).count).to eq(3)
 
     # On next login, gets fixed
-    provider('/').log_on_user(user, {}, {})
+    provider('/').tap { |p| p.log_on_user(user, {}, p.cookie_jar) }
     expect(UserAuthToken.where(user_id: user.id).count).to eq(UserAuthToken::MAX_SESSION_COUNT)
 
     # Oldest sessions are 1, 2, 3. They should now be deleted
@@ -525,20 +553,22 @@ describe Auth::DefaultCurrentUserProvider do
     SiteSetting.same_site_cookies = "Lax"
 
     @provider = provider('/')
-    @provider.log_on_user(user, {}, {})
+    @provider.log_on_user(user, {}, @provider.cookie_jar)
 
-    expect(@provider.cookie_jar["_t"][:same_site]).to eq("Lax")
-    expect(@provider.cookie_jar["_t"][:httponly]).to eq(true)
-    expect(@provider.cookie_jar["_t"][:secure]).to eq(false)
+    info = get_cookie_info(@provider.cookie_jar, "_t")
+    expect(info[:samesite]).to eq("Lax")
+    expect(info[:httponly]).to eq(true)
+    expect(info[:secure]).to eq(nil)
 
     SiteSetting.force_https = true
     SiteSetting.same_site_cookies = "Disabled"
 
     @provider = provider('/')
-    @provider.log_on_user(user, {}, {})
+    @provider.log_on_user(user, {}, @provider.cookie_jar)
 
-    expect(@provider.cookie_jar["_t"][:secure]).to eq(true)
-    expect(@provider.cookie_jar["_t"].key?(:same_site)).to eq(false)
+    info = get_cookie_info(@provider.cookie_jar, "_t")
+    expect(info[:secure]).to eq(true)
+    expect(info[:samesite]).to eq(nil)
   end
 
   it "correctly expires session" do
@@ -551,7 +581,7 @@ describe Auth::DefaultCurrentUserProvider do
       issued_at: 5.minutes.ago
     )
 
-    provider('/').log_on_user(user, {}, {})
+    provider('/').tap { |p| p.log_on_user(user, {}, p.cookie_jar) }
 
     expect(provider("/", "HTTP_COOKIE" => "_t=#{cookie}").current_user.id).to eq(user.id)
 
@@ -561,7 +591,7 @@ describe Auth::DefaultCurrentUserProvider do
 
   it "always unstage users" do
     user.update!(staged: true)
-    provider("/").log_on_user(user, {}, {})
+    provider("/").tap { |p| p.log_on_user(user, {}, p.cookie_jar) }
     user.reload
     expect(user.staged).to eq(false)
   end
@@ -696,7 +726,7 @@ describe Auth::DefaultCurrentUserProvider do
 
   it "ignores a valid auth cookie that has been tampered with" do
     @provider = provider('/')
-    @provider.log_on_user(user, {}, {})
+    @provider.log_on_user(user, {}, @provider.cookie_jar)
 
     cookie = @provider.cookie_jar["_t"]
     cookie = swap_2_different_characters(cookie)
