@@ -182,44 +182,6 @@ function setupTestsCommon(application, container, config) {
   $.fn.modal = AcceptanceModal;
 
   let server;
-
-  Object.defineProperty(window, "server", {
-    get() {
-      deprecated(
-        "Accessing the global variable `server` is deprecated. Use a `pretend()` method instead.",
-        {
-          since: "2.6.0.beta.3",
-          dropFrom: "2.6.0",
-        }
-      );
-      return server;
-    },
-  });
-  Object.defineProperty(window, "sandbox", {
-    get() {
-      deprecated(
-        "Accessing the global variable `sandbox` is deprecated. Import `sinon` instead",
-        {
-          since: "2.6.0.beta.4",
-          dropFrom: "2.6.0",
-        }
-      );
-      return sinon;
-    },
-  });
-  Object.defineProperty(window, "exists", {
-    get() {
-      deprecated(
-        "Accessing the global function `exists` is deprecated. Import it instead.",
-        {
-          since: "2.6.0.beta.4",
-          dropFrom: "2.6.0",
-        }
-      );
-      return exists;
-    },
-  });
-
   let setupData;
   const setupDataElement = document.getElementById("data-discourse-setup");
   if (setupDataElement) {

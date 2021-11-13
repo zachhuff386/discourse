@@ -166,15 +166,4 @@ export default Controller.extend({
   toggleDeleteTooltip() {
     this.toggleProperty("showTooltip");
   },
-
-  actions: {
-    destroy() {
-      deprecated("Use `destroyGroup` action instead of `destroy`.", {
-        since: "2.5.0",
-        dropFrom: "2.6.0",
-      });
-
-      this.destroyGroup();
-    },
-  },
 });
