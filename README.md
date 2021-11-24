@@ -1,7 +1,5 @@
-<a href="https://www.discourse.org/">
-  ![Discourse-Logo-Light](images/discourse-logo.svg#gh-light-mode-only)
-  ![Discourse-Logo-Dark](images/discourse-logo-darkmode.svg#gh-dark-mode-only)
-</a>
+![Discourse-Logo-Light](/images/discourse-logo.svg#gh-light-mode-only)
+![Discourse-Logo-Dark](/images/discourse-logo-darkmode.svg#gh-dark-mode-only)
 
 Discourse is the 100% open source discussion platform built for the next decade of the Internet. Use it as a:
 
