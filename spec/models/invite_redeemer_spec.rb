@@ -229,24 +229,26 @@ describe InviteRedeemer do
     end
 
     context "ReviewableUser" do
-      it "approves pending record" do
-        reviewable = ReviewableUser.needs_review!(target: Fabricate(:user, email: invite.email), created_by: invite.invited_by)
-        reviewable.status = Reviewable.statuses[:pending]
-        reviewable.save!
-        invite_redeemer.redeem
+      let(:reviewable) { ReviewableUser.needs_review!(target: Fabricate(:user, email: invite.email), created_by: invite.invited_by) }
 
-        reviewable.reload
-        expect(reviewable.status).to eq(Reviewable.statuses[:approved])
+      before do
+        reviewable.update!(status: status)
       end
 
-      it "does not raise error if record is not pending" do
-        reviewable = ReviewableUser.needs_review!(target: Fabricate(:user, email: invite.email), created_by: invite.invited_by)
-        reviewable.status = Reviewable.statuses[:ignored]
-        reviewable.save!
-        invite_redeemer.redeem
+      context "when the record is pending" do
+        let(:status) { :pending }
 
-        reviewable.reload
-        expect(reviewable.status).to eq(Reviewable.statuses[:ignored])
+        it "approves the record" do
+          expect { invite_redeemer.redeem }.to change { reviewable.reload.dup }.to be_approved
+        end
+      end
+
+      context "when the record is not pending" do
+        let(:status) { :ignored }
+
+        it "does not raise an error" do
+          expect { invite_redeemer.redeem }.not_to change { reviewable.reload.status }
+        end
       end
     end
 

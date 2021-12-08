@@ -25,6 +25,25 @@ class Reviewable < ActiveRecord::Base
   has_many :reviewable_histories
   has_many :reviewable_scores, -> { order(created_at: :desc) }
 
+  enum status: {
+    pending: 0,
+    approved: 1,
+    rejected: 2,
+    ignored: 3,
+    deleted: 4
+  }
+  enum priority: {
+    low: 0,
+    medium: 5,
+    high: 10
+  }, _scopes: false, _suffix: true
+  enum sensitivity: {
+    disabled: 0,
+    low: 9,
+    medium: 6,
+    high: 3
+  }, _scopes: false, _suffix: true
+
   after_create do
     log_history(:created, created_by)
   end
@@ -42,45 +61,10 @@ class Reviewable < ActiveRecord::Base
     {}
   end
 
-  # The gaps are in case we want more precision in the future
-  def self.priorities
-    @priorities ||= Enum.new(
-      low: 0,
-      medium: 5,
-      high: 10
-    )
-  end
-
-  # The gaps are in case we want more precision in the future
-  def self.sensitivity
-    @sensitivity ||= Enum.new(
-      disabled: 0,
-      low: 9,
-      medium: 6,
-      high: 3
-    )
-  end
-
-  def self.statuses
-    @statuses ||= Enum.new(
-      pending: 0,
-      approved: 1,
-      rejected: 2,
-      ignored: 3,
-      deleted: 4
-    )
-  end
-
   # This number comes from looking at forums in the wild and what numbers work.
   # As the site accumulates real data it'll be based on the site activity instead.
   def self.typical_sensitivity
     12.5
-  end
-
-  # Generate `pending?`, `rejected?`, etc helper methods
-  statuses.each do |name, id|
-    define_method("#{name}?") { status == id }
-    singleton_class.define_method(name) { where(status: id) }
   end
 
   def self.default_visible
@@ -205,7 +189,7 @@ class Reviewable < ActiveRecord::Base
 
     rs = reviewable_scores.new(
       user: user,
-      status: ReviewableScore.statuses[:pending],
+      status: :pending,
       reviewable_score_type: reviewable_score_type,
       score: sub_total,
       user_accuracy_bonus: user_accuracy_bonus,
@@ -226,7 +210,7 @@ class Reviewable < ActiveRecord::Base
 
   def self.set_priorities(values)
     values.each do |k, v|
-      id = Reviewable.priorities[k]
+      id = priorities[k]
       PluginStore.set('reviewables', "priority_#{id}", v) unless id.nil?
     end
   end
@@ -234,9 +218,9 @@ class Reviewable < ActiveRecord::Base
   def self.sensitivity_score_value(sensitivity, scale)
     return Float::MAX if sensitivity == 0
 
-    ratio = sensitivity / Reviewable.sensitivity[:low].to_f
+    ratio = sensitivity / sensitivities[:low].to_f
     high = (
-      PluginStore.get('reviewables', "priority_#{Reviewable.priorities[:high]}") ||
+      PluginStore.get('reviewables', "priority_#{priorities[:high]}") ||
       typical_sensitivity
     ).to_f
 
@@ -265,7 +249,7 @@ class Reviewable < ActiveRecord::Base
 
   def self.min_score_for_priority(priority = nil)
     priority ||= SiteSetting.reviewable_default_visibility
-    id = Reviewable.priorities[priority.to_sym]
+    id = priorities[priority]
     return 0.0 if id.nil?
     PluginStore.get('reviewables', "priority_#{id}").to_f
   end
@@ -276,7 +260,7 @@ class Reviewable < ActiveRecord::Base
 
   def log_history(reviewable_history_type, performed_by, edited: nil)
     reviewable_histories.create!(
-      reviewable_history_type: ReviewableHistory.types[reviewable_history_type],
+      reviewable_history_type: reviewable_history_type,
       status: status,
       created_by: performed_by,
       edited: edited
@@ -380,9 +364,7 @@ class Reviewable < ActiveRecord::Base
   end
 
   def transition_to(status_symbol, performed_by)
-    was_pending = pending?
-
-    self.status = Reviewable.statuses[status_symbol]
+    self.status = status_symbol
     save!
 
     log_history(:transitioned, performed_by)
@@ -396,7 +378,7 @@ class Reviewable < ActiveRecord::Base
       )
     end
 
-    was_pending
+    status_previously_changed?(from: "pending")
   end
 
   def post_options
@@ -496,13 +478,13 @@ class Reviewable < ActiveRecord::Base
           SELECT reviewable_id
           FROM reviewable_histories
           WHERE reviewable_history_type = #{ReviewableHistory.types[:transitioned]} AND
-          status <> #{Reviewable.statuses[:pending]} AND created_by_id = #{reviewed_by_id}
+          status <> #{statuses[:pending]} AND created_by_id = #{reviewed_by_id}
         ) AS rh ON rh.reviewable_id = reviewables.id
       SQL
       )
     end
 
-    min_score = Reviewable.min_score_for_priority(priority)
+    min_score = min_score_for_priority(priority)
 
     if min_score > 0 && status == :pending
       result = result.where("reviewables.score >= ? OR reviewables.force_review", min_score)
@@ -634,8 +616,8 @@ class Reviewable < ActiveRecord::Base
     DB.query(
       sql,
       topic_id: topic_id,
-      pending: Reviewable.statuses[:pending],
-      approved: Reviewable.statuses[:approved]
+      pending: self.class.statuses[:pending],
+      approved: self.class.statuses[:approved]
     )
 
     self.score = result[0].score
@@ -732,7 +714,7 @@ end
 #
 #  id                      :bigint           not null, primary key
 #  type                    :string           not null
-#  status                  :integer          default(0), not null
+#  status                  :integer          default("pending"), not null
 #  created_by_id           :integer          not null
 #  reviewable_by_moderator :boolean          default(FALSE), not null
 #  reviewable_by_group_id  :integer
