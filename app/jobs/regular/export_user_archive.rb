@@ -359,7 +359,7 @@ module Jobs
 
         yield [
           rev.id,
-          Reviewable.statuses[rev.status],
+          rev.status,
           rev.category_id,
           rev.topic_id,
           rev.payload['raw'],

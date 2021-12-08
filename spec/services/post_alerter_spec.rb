@@ -266,7 +266,7 @@ describe PostAlerter do
 
       PostActionNotifier.enable
       Reviewable.set_priorities(high: 4.0)
-      SiteSetting.hide_post_sensitivity = Reviewable.sensitivity[:low]
+      SiteSetting.hide_post_sensitivity = Reviewable.sensitivities[:low]
 
       PostActionCreator.spam(evil_trout, post)
       PostActionCreator.spam(walterwhite, post)

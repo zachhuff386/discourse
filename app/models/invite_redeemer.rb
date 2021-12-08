@@ -171,7 +171,7 @@ InviteRedeemer = Struct.new(:invite, :email, :username, :name, :password, :user_
   end
 
   def approve_account_if_needed
-    if invited_user.present? && reviewable_user = ReviewableUser.find_by(target: invited_user, status: Reviewable.statuses[:pending])
+    if invited_user.present? && reviewable_user = ReviewableUser.pending.find_by(target: invited_user)
       reviewable_user.perform(
         invite.invited_by,
         :approve_user,
