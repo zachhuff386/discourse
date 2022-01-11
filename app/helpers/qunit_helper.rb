@@ -4,7 +4,7 @@ module QunitHelper
 
   def support_bundles
     result = []
-    if Rails.env.production? || @legacy_ember
+    if @legacy_ember
       result << preload_script("discourse/tests/test-support-rails")
       result << preload_script("discourse/tests/test-helpers-rails")
     else

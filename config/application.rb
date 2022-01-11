@@ -178,6 +178,8 @@ module Discourse
       embed-application.js
       discourse/tests/active-plugins.js
       discourse/tests/test_starter.js
+      discourse/tests/test-support-rails.js
+      discourse/tests/test-helpers-rails.js
     }
 
     # Precompile all available locales

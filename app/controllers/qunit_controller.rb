@@ -22,7 +22,11 @@ class QunitController < ApplicationController
     raise Discourse::NotFound.new if !can_see_theme_qunit?
 
     @is_proxied = is_ember_cli_proxy?
-    @legacy_ember = Rails.env.development? && !@is_proxied
+    @legacy_ember = if Rails.env.production?
+      ENV['EMBER_CLI_PROD_ASSETS'] != "1"
+    else
+      !@is_proxied
+    end
 
     # In production mode all bundles use `application`
     @app_bundle = "application"
