@@ -186,18 +186,19 @@ createWidget("post-avatar", {
       });
     }
 
-    const result = [body];
+    const postAvatarBody = [body];
 
     if (attrs.flair_url || attrs.flair_bg_color) {
-      result.push(this.attach("avatar-flair", attrs));
+      postAvatarBody.push(this.attach("avatar-flair", attrs));
     } else {
       const autoFlairAttrs = autoGroupFlairForUser(this.site, attrs);
+
       if (autoFlairAttrs) {
-        result.push(this.attach("avatar-flair", autoFlairAttrs));
+        postAvatarBody.push(this.attach("avatar-flair", autoFlairAttrs));
       }
     }
 
-    result.push(h("div.poster-avatar-extra"));
+    const result = [h("div.post-avatar", postAvatarBody)];
 
     if (this.settings.displayPosterName) {
       result.push(this.attach("post-avatar-user-info", attrs));
@@ -388,8 +389,20 @@ createWidget("post-group-request", {
 createWidget("post-contents", {
   buildKey: (attrs) => `post-contents-${attrs.id}`,
 
-  defaultState() {
-    return { expandedFirstPost: false, repliesBelow: [] };
+  defaultState(attrs) {
+    const defaultState = {
+      expandedFirstPost: false,
+      repliesBelow: [],
+    };
+
+    if (this.siteSettings.enable_filtered_replies_view) {
+      const topicController = this.register.lookup("controller:topic");
+
+      defaultState.filteredRepliesShown =
+        topicController.replies_to_post_number === attrs.post_number.toString();
+    }
+
+    return defaultState;
   },
 
   buildClasses(attrs) {
@@ -471,9 +484,11 @@ createWidget("post-contents", {
     ) {
       controller.send("cancelFilter", currentFilterPostNumber);
       this.state.filteredRepliesShown = false;
+      return Promise.resolve();
     } else {
       this.state.filteredRepliesShown = true;
-      post
+
+      return post
         .get("topic.postStream")
         .filterReplies(post.post_number, post.id)
         .then(() => {

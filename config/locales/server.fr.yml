@@ -225,8 +225,6 @@ fr:
       <p>Si vous vous souvenez de votre mot de passe, vous pouvez vous <a href="%{base_url}/login">connecter</a>.</p>
 
       <p>Sinon, veuillez <a href="%{base_url}/password-reset">réinitialiser votre mot de passe</a>.</p>
-    not_found_template_link: |
-      La date d'expiration de <p>l'invitation à <a href="%{base_url}">%{site_name}</a> a été dépassée. Nous vous invitons à demander à la personne qui vous a invité(e) de vous faire parvenir une nouvelle invitation.</p>
     user_exists: "Inutile d'inviter <b>%{email}</b>, cette personne <a href='%{base_path}/u/%{username}/summary'>dispose déjà d'un compte !</a>"
     invite_exists: "Vous avez déjà invité <b>%{email}</b>."
     invalid_email: "%{email} n'est pas une adresse de courriel valable."
@@ -880,13 +878,6 @@ fr:
   draft_backup:
     pm_title: "Brouillons relatifs à des sujets en cours de discussion."
     pm_body: "Sujet contenant des brouillons enregistrés"
-  user_activity:
-    no_bookmarks:
-      self: "Vous n'avez pas de sujet dans vos signets ; les signets vous permettent de retrouver rapidement des sujets d'intérêt."
-      search: "Aucun signet trouvé avec la requête de recherche fournie."
-      others: "Aucun signet."
-    no_drafts:
-      self: "Vous n'avez pas de brouillons. Lorsque vous commencerez à répondre à un sujet, cette réponse sera automatiquement enregistrée sous forme de nouveau brouillon."
   email_settings:
     pop3_authentication_error: "L'authentification auprès du serveur POP3 a échoué. Vérifiez le nom d'utilisateur et le mot de passe avant de réessayer."
     imap_authentication_error: "L'authentification auprès du serveur IMAP a échoué. Vérifiez le nom d'utilisateur et le mot de passe avant de réessayer."
@@ -1325,6 +1316,18 @@ fr:
         ignores_count: Ignorés
         mutes_count: Mis en sourdine
       description: "Les utilisateurs qui ont été mis en sourdine ou ignorés par de nombreux autres utilisateurs."
+    top_users_by_likes_received:
+      labels:
+        user: Utilisateur
+        qtt_like: '« J''aime » reçus'
+    top_users_by_likes_received_from_inferior_trust_level:
+      labels:
+        user: Utilisateur
+        qtt_like: '« J''aime » reçus'
+    top_users_by_likes_received_from_a_variety_of_people:
+      labels:
+        user: Utilisateur
+        qtt_like: '« J''aime » reçus'
   dashboard:
     rails_env_warning: "Votre serveur fonctionne dans l'environnement de %{env}."
     host_names_warning: "Votre fichier config/database.yml utilise le nom d'hôte par défaut. Veuillez renseigner votre nom d'hôte."
@@ -1498,7 +1501,6 @@ fr:
     allowed_iframes: "Une liste des préfixes du domaine src iframe que Discourse peut autoriser en toute sécurité dans les messages"
     allowed_crawler_user_agents: "Les agents utilisateurs des robots d'indexation qui sont autorisés à accéder au site. ATTENTION : CE PARAMÈTRE BLOQUERA TOUS LES ROBOTS D'INDEXATION NON LISTÉS ICI !"
     blocked_crawler_user_agents: "Mot unique insensible à la casse dans la chaîne de caractères de l'agent utilisateur identifiant les robots d'exploration Web qui ne devraient pas être autorisés à accéder au site. Ne s'applique pas si la liste d'autorisations est définie."
-    slow_down_crawler_user_agents: "Agents utilisateurs des robots d'indexation qui devraient être limités dans robots.txt avec la commande Crawl-delay"
     slow_down_crawler_rate: "Si slow_down_crawler_user_agents est défini, ce taux s'appliquera à tous les robots d'indexation (nombre de secondes d'attente entre requêtes)"
     content_security_policy: "Activer Content-Security-Policy"
     content_security_policy_report_only: "Activer Content-Security-Policy-Report-Only"
@@ -1536,7 +1538,6 @@ fr:
     blocked_email_domains: "Une liste de domaines de courriels, séparés par des barres verticales (caractère « | ») que les utilisateurs ne sont pas autorisés à utiliser pour s'inscrire. Exemple : mailinator.com|trashmail.net"
     allowed_email_domains: "Une liste de domaines de courriels, séparés par des barres verticales (caractère « | ») que les utilisateurs DOIVENT utiliser pour s'inscrire. ATTENTION : les utilisateurs avec une adresse de courriel d'un domaine non repris dans la liste ne seront pas autorisés à s'inscrire !"
     auto_approve_email_domains: "Les utilisateurs dont le domaine de l'adresse courriel appartient à cette liste seront automatiquement approuvés."
-    hide_email_address_taken: "Ne pas informer les utilisateurs qu'un compte existe avec une adresse courriel donnée lors de l'inscription ou à partir du formulaire d'oubli du mot de passe."
     log_out_strict: "Lors de la déconnexion, déconnecter TOUTES les sessions de l'utilisateur sur tous les appareils"
     version_checks: "Vérifier périodiquement les serveurs Discourse pour obtenir des informations de mises à jour et les afficher sur le tableau de bord <a href='%{base_path}/admin' target='_blank'>/admin</a>"
     new_version_emails: "Envoyer un courriel à contact_email quand une nouvelle version de Discourse est disponible."
@@ -1924,7 +1925,6 @@ fr:
     warn_reviving_old_topic_age: "Lorsque quelqu'un commence à répondre à un sujet dont la dernière réponse remonte à plusieurs jours, un avertissement sera affiché. Désactivez la fonctionnalité en indiquant 0."
     autohighlight_all_code: "Forcer la coloration syntaxique dans tous les blocs de codes, même si aucun langage de programmation n'est défini explicitement."
     highlighted_languages: "Règles de coloration syntaxique supportées. (Attention : supporter trop de langages peut impacter les performances.) Voir : <a href='https://highlightjs.org/static/demo/' target='_blank'>https://highlightjs.org/static/demo/</a> pour une démonstration."
-    show_copy_button_on_codeblocks: "Ajouter un bouton aux blocs de codes pour copier leur contenu dans le presse-papier de l'utilisateur. Cette fonctionnalité n'est pas disponible avec Internet Explorer."
     embed_any_origin: "Autoriser le contenu intégré, quelle que soit son origine. Cela est nécessaire pour les applications mobiles utilisant du HTML statique."
     embed_topics_list: "Permettre l'intégration HTML des listes de sujets"
     embed_set_canonical_url: "Configurer l'URL canonique des sujets intégrés à l'URL du contenu intégré."
@@ -2310,13 +2310,6 @@ fr:
     cannot_delete_has_posts:
       one: "L'utilisateur %{username} a %{count} message dans un sujet public ou message personnel, vous ne pouvez donc pas le supprimer."
       other: "L'utilisateur %{username} a %{count} messages dans des sujets publics ou messages personnels, vous ne pouvez donc pas le supprimer."
-  reviewables_reminder:
-    submitted:
-      one: "Ces éléments ont été soumis il y a plus de %{count} heure. [Nous vous invitons à les examiner](%{base_path}/review)."
-      other: "Ces éléments ont été soumis il y a plus de %{count} heures. [Nous vous invitons à les examiner](%{base_path}/review)."
-    subject_template:
-      one: "%{count} élément à examiner"
-      other: "%{count} éléments à examiner"
   unsubscribe_mailer:
     title: "Désabonnement"
     subject_template: "Confirmez que vous ne souhaitez plus recevoir de courriels de mises à jour de %{site_title}"
@@ -2436,47 +2429,6 @@ fr:
   test_mailer:
     title: "Envoyer un courriel de test"
     subject_template: "[%{email_prefix}] Test de délivrabilité du courriel"
-    text_body_template: |
-      Ceci est un message de test envoyé par
-
-      [**%{base_url}**][0]
-
-      La bonne remise des courriels est une affaire un peu compliquée. Voici quelques points importants qu'il vous faudra examiner en premier lieu :
-
-      - Assurez-vous de définir l'adresse de l'expéditeur (le champ « from: ») utilisé par les courriels de notification dans les paramètres de votre site. **Le nom de domaine indiqué dans le champ « from: » des courriels que vous émettez est examiné par des entités tierces pour déterminer si ces courriels sont légitimes ou non**.
-
-      - Assurez-vous de savoir afficher la source d'un courriel dans votre client de messagerie, afin d'en inspecter les en-têtes et d'y chercher des indices importants. Dans Gmail, la fonctionnalité « afficher l'original » (accessible depuis le menu déroulant situé en haut à droite lorsque vous affichez un message) vous permet de le faire.
-
-      - **IMPORTANT :** Votre fournisseur d'accès à Internet a-t-il créé un enregistrement dans le DNS inversé qui permette de faire correspondre le nom de domaine avec les adresses IP depuis lesquels vos courriels sont expédiés ? Vous pouvez [examiner les enregistrements de DNS inversé][2] ici. Si votre fournisseur d'accès n'a pas défini les enregistrements de DNS inversé requis, il est très peu probable que le moindre de vos courriels soit remis à son destinataire.
-
-      - L'[enregistrement SPF][8] de votre nom de domaine est-il valable ? [Examinez votre enregistrement SPF][1] ici. Notez que le type d'enregistrement TXT est celui qui est officiellement requis par le système SPF.
-
-      - L'[enregistrement DKIM][3] de votre nom de domaine est-il valable ? Cela entraînera une amélioration significative de la bonne remise des courriels. [Examinez votre enregistrement DKIM][7] ici.
-
-      - Si vous exploitez votre propre serveur de courriel, assurez-vous que les adresses IP de celui-ci [ne soient pas inscrites sur une ou plusieurs listes de blocage][4]. Assurez-vous aussi que votre serveur, lorsqu'il émet son message HELO, indique un nom d'hôte pleinement qualifié qu'une requête DNS permette de résoudre en adresse IP. Si cette condition n'est pas satisfaite, de nombreux services de courriel rejetteront vos courriels.
-
-      - Nous vous recommandons fortement d'**expédier un courriel de test à l'adresse [mail-tester.com][mt]** pour vous assurer que l'ensemble des éléments indiqués ci-dessus fonctionnent correctement.
-
-      (*Le plus simple* est de créer un compte chez [SendGrid][sg], chez [SparkPost][sp], chez [Mailgun][mg] ou chez [Mailjet][mj]. Ces fournisseurs proposent des forfaits d'envoi de courriel à faible coût, qui suffiront aux petites communautés. Néanmoins, il vous faudra tout de même configurer les enregistrement DNS ayant trait à SPF et à DKIM !)
-
-      En espérant que ce courriel de test de bonne remise vous sera bien parvenu !
-
-      Bonne chance,
-
-      Vos comparses du projet [Discourse](https://www.discourse.org)
-
-      [0]: %{base_url}
-      [1]: https://www.kitterman.com/spf/validate.html
-      [2]: https://mxtoolbox.com/ReverseLookup.aspx
-      [3]: http://www.dkim.org/
-      [4]: https://whatismyipaddress.com/blacklist-check
-      [7]: https://www.mail-tester.com/spf-dkim-check
-      [8]: http://www.openspf.org/SPF_Record_Syntax
-      [sg]: https://goo.gl/r1WMF6
-      [sp]: https://www.sparkpost.com/
-      [mg]: https://www.mailgun.com/
-      [mj]: https://www.mailjet.com/pricing/
-      [mt]: https://www.mail-tester.com/
   new_version_mailer:
     title: "Nouvelle version"
     subject_template: "[%{email_prefix}] Nouvelle version de Discourse, mise à jour disponible"
@@ -2577,6 +2529,27 @@ fr:
         ```
 
         Pour plus d'informations, nous vous invitons à consulter notre [charte communautaire](%{base_url}/guidelines).
+    flags_agreed_and_post_deleted_for_responders:
+      text_body_template: |
+        Bonjour,
+
+        Ce message vous est envoyé de manière automatisée par %{site_name} pour vous informer qu'un [post](%{base_url}%{url}) auquel vous aviez répondu, a été supprimé.
+
+        %{flag_reason}
+
+        Ce message a été signalé par la communauté et un responsable a décidé de le supprimer.
+
+        ``` markdown
+        %{flagged_post_raw_content}
+        ```
+
+        Auquel vous aviez répondu
+
+        ``` markdown
+        %{flagged_post_response_raw_content}
+        ```
+
+        Pour plus d'informations, nous vous invitons à consulter notre [community guidelines](%{base_url}/guidelines).
     usage_tips:
       text_body_template: |
         Pour connaître quelques astuces qui vous aideront à démarrer en tant que nouveau membre, [rendez-vous sur cette page](https://meta.discourse.org/t/fr-trucs-et-astuces-pour-nouveaux-utilisateurs/84100/).

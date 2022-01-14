@@ -8,6 +8,8 @@ describe Guardian do
 
   fab!(:user) { Fabricate(:user) }
   fab!(:another_user) { Fabricate(:user) }
+  fab!(:member) { Fabricate(:user) }
+  fab!(:owner) { Fabricate(:user) }
   fab!(:moderator) { Fabricate(:moderator) }
   fab!(:admin) { Fabricate(:admin) }
   fab!(:anonymous_user) { Fabricate(:anonymous) }
@@ -492,9 +494,9 @@ describe Guardian do
       expect(Guardian.new.can_invite_to_forum?).to be_falsey
     end
 
-    it 'returns true when the site requires approving users and is mod' do
+    it 'returns true when the site requires approving users' do
       SiteSetting.must_approve_users = true
-      expect(Guardian.new(moderator).can_invite_to_forum?).to be_truthy
+      expect(Guardian.new(trust_level_2).can_invite_to_forum?).to be_truthy
     end
 
     it 'returns false when max_invites_per_day is 0' do
@@ -735,8 +737,6 @@ describe Guardian do
       end
 
       it 'allows members of an authorized group' do
-        user = Fabricate(:user)
-
         secure_category = plain_category
         secure_category.set_permissions(group => :readonly)
         secure_category.save
@@ -940,7 +940,7 @@ describe Guardian do
         end
 
         it 'is true when logged in' do
-          expect(Guardian.new(Fabricate(:user)).can_see?(post_revision)).to be_truthy
+          expect(Guardian.new(user).can_see?(post_revision)).to be_truthy
         end
       end
 
@@ -1418,7 +1418,6 @@ describe Guardian do
         post = Fabricate(:post, topic: topic)
         post.wiki = true
 
-        user = Fabricate(:user)
         expect(Guardian.new(user).can_edit?(post)).to eq(false)
       end
 
@@ -1885,7 +1884,6 @@ describe Guardian do
 
     it 'returns true for a group member with reviewable status' do
       SiteSetting.enable_category_group_moderation = true
-      group = Fabricate(:group)
       GroupUser.create!(group_id: group.id, user_id: user.id)
       topic.category.update!(reviewable_by_group_id: group.id)
       expect(Guardian.new(user).can_review_topic?(topic)).to eq(true)
@@ -1907,7 +1905,6 @@ describe Guardian do
 
     it 'returns true for a group member with reviewable status' do
       SiteSetting.enable_category_group_moderation = true
-      group = Fabricate(:group)
       GroupUser.create!(group_id: group.id, user_id: user.id)
       topic.category.update!(reviewable_by_group_id: group.id)
       expect(Guardian.new(user).can_close_topic?(topic)).to eq(true)
@@ -1929,7 +1926,6 @@ describe Guardian do
 
     it 'returns true for a group member with reviewable status' do
       SiteSetting.enable_category_group_moderation = true
-      group = Fabricate(:group)
       GroupUser.create!(group_id: group.id, user_id: user.id)
       topic.category.update!(reviewable_by_group_id: group.id)
       expect(Guardian.new(user).can_archive_topic?(topic)).to eq(true)
@@ -1951,7 +1947,6 @@ describe Guardian do
 
     it 'returns true for a group member with reviewable status' do
       SiteSetting.enable_category_group_moderation = true
-      group = Fabricate(:group)
       GroupUser.create!(group_id: group.id, user_id: user.id)
       topic.category.update!(reviewable_by_group_id: group.id)
       expect(Guardian.new(user).can_edit_staff_notes?(topic)).to eq(true)
@@ -2157,7 +2152,6 @@ describe Guardian do
 
       it "returns true for category moderators" do
         SiteSetting.enable_category_group_moderation = true
-        group = Fabricate(:group)
         GroupUser.create(group: group, user: user)
         category = Fabricate(:category, reviewable_by_group_id: group.id)
         post.topic.update!(category: category)
@@ -3403,11 +3397,9 @@ describe Guardian do
     it 'Correctly handles owner visible groups' do
       group = Group.new(name: 'group', visibility_level: Group.visibility_levels[:owners])
 
-      member = Fabricate(:user)
       group.add(member)
       group.save!
 
-      owner = Fabricate(:user)
       group.add_owner(owner)
       group.reload
 
@@ -3422,11 +3414,9 @@ describe Guardian do
     it 'Correctly handles staff visible groups' do
       group = Group.new(name: 'group', visibility_level: Group.visibility_levels[:staff])
 
-      member = Fabricate(:user)
       group.add(member)
       group.save!
 
-      owner = Fabricate(:user)
       group.add_owner(owner)
       group.reload
 
@@ -3441,11 +3431,9 @@ describe Guardian do
     it 'Correctly handles member visible groups' do
       group = Group.new(name: 'group', visibility_level: Group.visibility_levels[:members])
 
-      member = Fabricate(:user)
       group.add(member)
       group.save!
 
-      owner = Fabricate(:user)
       group.add_owner(owner)
       group.reload
 
@@ -3459,11 +3447,9 @@ describe Guardian do
 
     it 'Correctly handles logged-on-user visible groups' do
       group = Group.new(name: 'group', visibility_level: Group.visibility_levels[:logged_on_users])
-      member = Fabricate(:user)
       group.add(member)
       group.save!
 
-      owner = Fabricate(:user)
       group.add_owner(owner)
       group.reload
 
@@ -3487,11 +3473,9 @@ describe Guardian do
     it 'Correctly handles group members visibility for owner' do
       group = Group.new(name: 'group', members_visibility_level: Group.visibility_levels[:owners])
 
-      member = Fabricate(:user)
       group.add(member)
       group.save!
 
-      owner = Fabricate(:user)
       group.add_owner(owner)
       group.reload
 
@@ -3506,11 +3490,9 @@ describe Guardian do
     it 'Correctly handles group members visibility for staff' do
       group = Group.new(name: 'group', members_visibility_level: Group.visibility_levels[:staff])
 
-      member = Fabricate(:user)
       group.add(member)
       group.save!
 
-      owner = Fabricate(:user)
       group.add_owner(owner)
       group.reload
 
@@ -3525,11 +3507,9 @@ describe Guardian do
     it 'Correctly handles group members visibility for member' do
       group = Group.new(name: 'group', members_visibility_level: Group.visibility_levels[:members])
 
-      member = Fabricate(:user)
       group.add(member)
       group.save!
 
-      owner = Fabricate(:user)
       group.add_owner(owner)
       group.reload
 
@@ -3543,11 +3523,9 @@ describe Guardian do
 
     it 'Correctly handles group members visibility for logged-on-user' do
       group = Group.new(name: 'group', members_visibility_level: Group.visibility_levels[:logged_on_users])
-      member = Fabricate(:user)
       group.add(member)
       group.save!
 
-      owner = Fabricate(:user)
       group.add_owner(owner)
       group.reload
 
@@ -3571,11 +3549,9 @@ describe Guardian do
     it 'correctly handles owner visible groups' do
       group = Group.new(name: 'group', visibility_level: Group.visibility_levels[:owners])
 
-      member = Fabricate(:user)
       group.add(member)
       group.save!
 
-      owner = Fabricate(:user)
       group.add_owner(owner)
       group.reload
 
@@ -3592,11 +3568,9 @@ describe Guardian do
       group2 = Group.new(name: 'group2', visibility_level: Group.visibility_levels[:owners])
       group2.save!
 
-      member = Fabricate(:user)
       group.add(member)
       group.save!
 
-      owner = Fabricate(:user)
       group.add_owner(owner)
       group.reload
 
@@ -3611,11 +3585,9 @@ describe Guardian do
     it 'correctly handles staff visible groups' do
       group = Group.new(name: 'group', visibility_level: Group.visibility_levels[:staff])
 
-      member = Fabricate(:user)
       group.add(member)
       group.save!
 
-      owner = Fabricate(:user)
       group.add_owner(owner)
       group.reload
 
@@ -3630,11 +3602,9 @@ describe Guardian do
     it 'correctly handles member visible groups' do
       group = Group.new(name: 'group', visibility_level: Group.visibility_levels[:members])
 
-      member = Fabricate(:user)
       group.add(member)
       group.save!
 
-      owner = Fabricate(:user)
       group.add_owner(owner)
       group.reload
 
@@ -3649,11 +3619,9 @@ describe Guardian do
     it 'correctly handles logged-on-user visible groups' do
       group = Group.new(name: 'group', visibility_level: Group.visibility_levels[:logged_on_users])
 
-      member = Fabricate(:user)
       group.add(member)
       group.save!
 
-      owner = Fabricate(:user)
       group.add_owner(owner)
       group.reload
 
@@ -3670,11 +3638,9 @@ describe Guardian do
       group2 = Group.new(name: 'group2', visibility_level: Group.visibility_levels[:members])
       group2.save!
 
-      member = Fabricate(:user)
       group1.add(member)
       group1.save!
 
-      owner = Fabricate(:user)
       group1.add_owner(owner)
       group1.reload
 
@@ -3846,9 +3812,24 @@ describe Guardian do
   describe '#auth_token' do
     it 'returns the correct auth token' do
       token = UserAuthToken.generate!(user_id: user.id)
-      env = Rack::MockRequest.env_for("/", "HTTP_COOKIE" => "_t=#{token.unhashed_auth_token};")
+      cookie = create_auth_cookie(
+        token: token.unhashed_auth_token,
+        user_id: user.id,
+        trust_level: user.trust_level,
+        issued_at: 5.minutes.ago,
+      )
+      env = create_request_env(path: "/").merge("HTTP_COOKIE" => "_t=#{cookie};")
 
-      guardian = Guardian.new(user, Rack::Request.new(env))
+      guardian = Guardian.new(user, ActionDispatch::Request.new(env))
+      expect(guardian.auth_token).to eq(token.auth_token)
+    end
+
+    it 'supports v0 of auth cookie' do
+      token = UserAuthToken.generate!(user_id: user.id)
+      cookie = token.unhashed_auth_token
+      env = create_request_env(path: "/").merge("HTTP_COOKIE" => "_t=#{cookie};")
+
+      guardian = Guardian.new(user, ActionDispatch::Request.new(env))
       expect(guardian.auth_token).to eq(token.auth_token)
     end
   end
@@ -3926,6 +3907,46 @@ describe Guardian do
       it "is true for regular users" do
         expect(Guardian.new(user).can_see_site_contact_details?).to eq(true)
       end
+    end
+  end
+
+  describe "#can_mention_here?" do
+    it 'returns false if disabled' do
+      SiteSetting.max_here_mentioned = 0
+      expect(admin.guardian.can_mention_here?).to eq(false)
+    end
+
+    it 'returns false if disabled' do
+      SiteSetting.here_mention = ''
+      expect(admin.guardian.can_mention_here?).to eq(false)
+    end
+
+    it 'works with trust levels' do
+      SiteSetting.min_trust_level_for_here_mention = 2
+
+      expect(trust_level_0.guardian.can_mention_here?).to eq(false)
+      expect(trust_level_1.guardian.can_mention_here?).to eq(false)
+      expect(trust_level_2.guardian.can_mention_here?).to eq(true)
+      expect(trust_level_3.guardian.can_mention_here?).to eq(true)
+      expect(trust_level_4.guardian.can_mention_here?).to eq(true)
+      expect(moderator.guardian.can_mention_here?).to eq(true)
+      expect(admin.guardian.can_mention_here?).to eq(true)
+    end
+
+    it 'works with staff' do
+      SiteSetting.min_trust_level_for_here_mention = 'staff'
+
+      expect(trust_level_4.guardian.can_mention_here?).to eq(false)
+      expect(moderator.guardian.can_mention_here?).to eq(true)
+      expect(admin.guardian.can_mention_here?).to eq(true)
+    end
+
+    it 'works with admin' do
+      SiteSetting.min_trust_level_for_here_mention = 'admin'
+
+      expect(trust_level_4.guardian.can_mention_here?).to eq(false)
+      expect(moderator.guardian.can_mention_here?).to eq(false)
+      expect(admin.guardian.can_mention_here?).to eq(true)
     end
   end
 end

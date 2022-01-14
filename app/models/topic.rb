@@ -203,7 +203,15 @@ class Topic < ActiveRecord::Base
   belongs_to :category
   has_many :category_users, through: :category
   has_many :posts
+
+  # When we are ready we can add as: :bookmarkable here to use the
+  # polymorphic association.
+  #
+  # At that time we may also want to make another association for example
+  # :topic_bookmarks that get all of the bookmarks for that topic's bookmarkable id
+  # and type, because this one gets all of the post bookmarks.
   has_many :bookmarks, through: :posts
+
   has_many :ordered_posts, -> { order(post_number: :asc) }, class_name: "Post"
   has_many :topic_allowed_users
   has_many :topic_allowed_groups
@@ -392,9 +400,10 @@ class Topic < ActiveRecord::Base
     end
   end
 
-  def self.visible_post_types(viewed_by = nil)
+  def self.visible_post_types(viewed_by = nil, include_moderator_actions: true)
     types = Post.types
-    result = [types[:regular], types[:moderator_action], types[:small_action]]
+    result = [types[:regular]]
+    result += [types[:moderator_action], types[:small_action]] if include_moderator_actions
     result << types[:whisper] if viewed_by&.staff?
     result
   end
@@ -1777,6 +1786,10 @@ class Topic < ActiveRecord::Base
     end
   end
 
+  def first_smtp_enabled_group
+    self.allowed_groups.where(smtp_enabled: true).first
+  end
+
   private
 
   def invite_to_private_message(invited_by, target_user, guardian)
@@ -1882,7 +1895,7 @@ end
 #  excerpt                   :string
 #  pinned_globally           :boolean          default(FALSE), not null
 #  pinned_until              :datetime
-#  fancy_title               :string(400)
+#  fancy_title               :string
 #  highest_staff_post_number :integer          default(0), not null
 #  featured_link             :string
 #  reviewable_score          :float            default(0.0), not null

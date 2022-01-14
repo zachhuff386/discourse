@@ -5,6 +5,7 @@ import {
   translateModKey,
 } from "discourse/lib/utilities";
 import discourseComputed, {
+  bind,
   observes,
   on,
 } from "discourse-common/utils/decorators";
@@ -21,7 +22,6 @@ import deprecated from "discourse-common/lib/deprecated";
 import discourseDebounce from "discourse-common/lib/debounce";
 import { findRawTemplate } from "discourse-common/lib/raw-templates";
 import { getRegister } from "discourse-common/lib/get-owner";
-import { isEmpty } from "@ember/utils";
 import { isTesting } from "discourse-common/config/environment";
 import { linkSeenHashtags } from "discourse/lib/link-hashtags";
 import { linkSeenMentions } from "discourse/lib/link-mentions";
@@ -285,41 +285,53 @@ export default Component.extend(TextareaTextManipulation, {
       });
     });
 
+    this._itsatrap.bind("tab", () => this._indentSelection("right"));
+    this._itsatrap.bind("shift+tab", () => this._indentSelection("left"));
+
     // disable clicking on links in the preview
-    $(this.element.querySelector(".d-editor-preview")).on(
-      "click.preview",
-      (e) => {
-        if (wantsNewWindow(e)) {
-          return;
-        }
-        const $target = $(e.target);
-        if ($target.is("a.mention")) {
-          this.appEvents.trigger(
-            "click.discourse-preview-user-card-mention",
-            $target
-          );
-        }
-        if ($target.is("a.mention-group")) {
-          this.appEvents.trigger(
-            "click.discourse-preview-group-card-mention-group",
-            $target
-          );
-        }
-        if ($target.is("a")) {
-          e.preventDefault();
-          return false;
-        }
-      }
-    );
+    this.element
+      .querySelector(".d-editor-preview")
+      .addEventListener("click", this._handlePreviewLinkClick);
 
     if (this.composerEvents) {
       this.appEvents.on("composer:insert-block", this, "_insertBlock");
       this.appEvents.on("composer:insert-text", this, "_insertText");
       this.appEvents.on("composer:replace-text", this, "_replaceText");
+      this.appEvents.on(
+        "composer:indent-selected-text",
+        this,
+        "_indentSelection"
+      );
     }
 
     if (isTesting()) {
       this.element.addEventListener("paste", this.paste);
+    }
+  },
+
+  @bind
+  _handlePreviewLinkClick(event) {
+    if (wantsNewWindow(event)) {
+      return;
+    }
+
+    if (event.target.tagName === "A") {
+      if (event.target.classList.contains("mention")) {
+        this.appEvents.trigger(
+          "click.discourse-preview-user-card-mention",
+          $(event.target)
+        );
+      }
+
+      if (event.target.classList.contains("mention-group")) {
+        this.appEvents.trigger(
+          "click.discourse-preview-group-card-mention-group",
+          $(event.target)
+        );
+      }
+
+      event.preventDefault();
+      return false;
     }
   },
 
@@ -329,12 +341,19 @@ export default Component.extend(TextareaTextManipulation, {
       this.appEvents.off("composer:insert-block", this, "_insertBlock");
       this.appEvents.off("composer:insert-text", this, "_insertText");
       this.appEvents.off("composer:replace-text", this, "_replaceText");
+      this.appEvents.off(
+        "composer:indent-selected-text",
+        this,
+        "_indentSelection"
+      );
     }
 
     this._itsatrap?.destroy();
     this._itsatrap = null;
 
-    $(this.element.querySelector(".d-editor-preview")).off("click.preview");
+    this.element
+      .querySelector(".d-editor-preview")
+      ?.removeEventListener("click", this._handlePreviewLinkClick);
 
     this._previewMutationObserver?.disconnect();
 
@@ -785,28 +804,6 @@ export default Component.extend(TextareaTextManipulation, {
       }
 
       this.set("emojiPickerIsActive", !this.emojiPickerIsActive);
-    },
-
-    emojiSelected(code) {
-      let selected = this._getSelected();
-      const captures = selected.pre.match(/\B:(\w*)$/);
-
-      if (isEmpty(captures)) {
-        if (selected.pre.match(/\S$/)) {
-          this._addText(selected, ` :${code}:`);
-        } else {
-          this._addText(selected, `:${code}:`);
-        }
-      } else {
-        let numOfRemovedChars = selected.pre.length - captures[1].length;
-        selected.pre = selected.pre.slice(
-          0,
-          selected.pre.length - captures[1].length
-        );
-        selected.start -= numOfRemovedChars;
-        selected.end -= numOfRemovedChars;
-        this._addText(selected, `${code}:`);
-      }
     },
 
     toolbarButton(button) {

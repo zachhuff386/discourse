@@ -3,6 +3,7 @@ import {
   authorizesAllExtensions,
   authorizesOneOrMoreImageExtensions,
 } from "discourse/lib/uploads";
+import { alias } from "@ember/object/computed";
 import { BasePlugin } from "@uppy/core";
 import { resolveAllShortUrls } from "pretty-text/upload-short-url";
 import {
@@ -12,6 +13,7 @@ import {
   tinyAvatar,
 } from "discourse/lib/utilities";
 import discourseComputed, {
+  bind,
   observes,
   on,
 } from "discourse-common/utils/decorators";
@@ -20,13 +22,14 @@ import {
   linkSeenHashtags,
 } from "discourse/lib/link-hashtags";
 import {
+  cannotSee,
   fetchUnseenMentions,
   linkSeenMentions,
 } from "discourse/lib/link-mentions";
 import { later, next, schedule, throttle } from "@ember/runloop";
 import Component from "@ember/component";
 import Composer from "discourse/models/composer";
-import ComposerUpload from "discourse/mixins/composer-upload";
+import ComposerUploadUppy from "discourse/mixins/composer-upload-uppy";
 import EmberObject from "@ember/object";
 import I18n from "I18n";
 import { ajax } from "discourse/lib/ajax";
@@ -50,7 +53,6 @@ import userSearch from "discourse/lib/user-search";
 // All matches are whitespace tolerant as long it's still valid markdown.
 // If the image is inside a code block, we'll ignore it `(?!(.*`))`.
 const IMAGE_MARKDOWN_REGEX = /!\[(.*?)\|(\d{1,4}x\d{1,4})(,\s*\d{1,3}%)?(.*?)\]\((upload:\/\/.*?)\)(?!(.*`))/g;
-const REBUILD_SCROLL_MAP_EVENTS = ["composer:resized", "composer:typed-reply"];
 
 let uploadHandlers = [];
 export function addComposerUploadHandler(extensions, method) {
@@ -68,17 +70,6 @@ export function cleanUpComposerUploadHandler() {
   // cleanUpComposerUploadHandler and lost it. setting the length to 0 empties
   // the array but keeps the reference
   uploadHandlers.length = 0;
-}
-
-let uploadProcessorQueue = [];
-let uploadProcessorActions = {};
-export function addComposerUploadProcessor(queueItem, actionItem) {
-  uploadProcessorQueue.push(queueItem);
-  Object.assign(uploadProcessorActions, actionItem);
-}
-export function cleanUpComposerUploadProcessor() {
-  uploadProcessorQueue = [];
-  uploadProcessorActions = {};
 }
 
 let uploadPreProcessors = [];
@@ -106,18 +97,22 @@ export function cleanUpComposerUploadMarkdownResolver() {
   uploadMarkdownResolvers = [];
 }
 
-export default Component.extend(ComposerUpload, {
+export default Component.extend(ComposerUploadUppy, {
   classNameBindings: ["showToolbar:toolbar-visible", ":wmd-controls"],
 
   fileUploadElementId: "file-uploader",
   mobileFileUploaderId: "mobile-file-upload",
+  eventPrefix: "composer",
+  uploadType: "composer",
+  uppyId: "composer-editor-uppy",
+  composerModel: alias("composer"),
+  composerModelContentKey: "reply",
+  editorInputClass: ".d-editor-input",
   shouldBuildScrollMap: true,
   scrollMap: null,
   processPreview: true,
 
   uploadMarkdownResolvers,
-  uploadProcessorActions,
-  uploadProcessorQueue,
   uploadPreProcessors,
   uploadHandlers,
 
@@ -138,9 +133,7 @@ export default Component.extend(ComposerUpload, {
 
   @discourseComputed
   showLink() {
-    return (
-      this.currentUser && this.currentUser.get("link_posting_access") !== "none"
-    );
+    return this.currentUser && this.currentUser.link_posting_access !== "none";
   },
 
   @observes("focusTarget")
@@ -189,7 +182,8 @@ export default Component.extend(ComposerUpload, {
     };
   },
 
-  userSearchTerm(term) {
+  @bind
+  _userSearchTerm(term) {
     const topicId = this.get("topic.id");
     // maybe this is a brand new topic, so grab category from composer
     const categoryId =
@@ -218,35 +212,37 @@ export default Component.extend(ComposerUpload, {
     return extensions.map((ext) => `.${ext}`).join();
   },
 
+  @bind
+  _afterMentionComplete(value) {
+    this.composer.set("reply", value);
+
+    // ensures textarea scroll position is correct
+    schedule("afterRender", () => {
+      const input = this.element.querySelector(".d-editor-input");
+      input?.blur();
+      input?.focus();
+    });
+  },
+
   @on("didInsertElement")
   _composerEditorInit() {
     const $input = $(this.element.querySelector(".d-editor-input"));
-    const $preview = $(this.element.querySelector(".d-editor-preview-wrapper"));
 
     if (this.siteSettings.enable_mentions) {
       $input.autocomplete({
         template: findRawTemplate("user-selector-autocomplete"),
-        dataSource: (term) => this.userSearchTerm.call(this, term),
+        dataSource: this._userSearchTerm,
         key: "@",
         transformComplete: (v) => v.username || v.name,
-        afterComplete: (value) => {
-          this.composer.set("reply", value);
-
-          // ensures textarea scroll position is correct
-          schedule("afterRender", () => $input.blur().focus());
-        },
+        afterComplete: this._afterMentionComplete,
         triggerRule: (textarea) =>
           !inCodeBlock(textarea.value, caretPosition(textarea)),
       });
     }
 
-    if (this._enableAdvancedEditorPreviewSync()) {
-      this._initInputPreviewSync($input, $preview);
-    } else {
-      $input.on("scroll", () =>
-        throttle(this, this._syncEditorAndPreviewScroll, $input, $preview, 20)
-      );
-    }
+    this.element
+      .querySelector(".d-editor-input")
+      ?.addEventListener("scroll", this._throttledSyncEditorAndPreviewScroll);
 
     // Focus on the body unless we have a title
     if (!this.get("composer.canEditTitle")) {
@@ -308,39 +304,38 @@ export default Component.extend(ComposerUpload, {
     }
   },
 
-  _enableAdvancedEditorPreviewSync() {
-    return this.siteSettings.enable_advanced_editor_preview_sync;
-  },
-
   _resetShouldBuildScrollMap() {
     this.set("shouldBuildScrollMap", true);
   },
 
-  _initInputPreviewSync($input, $preview) {
-    REBUILD_SCROLL_MAP_EVENTS.forEach((event) => {
-      this.appEvents.on(event, this, this._resetShouldBuildScrollMap);
-    });
+  @bind
+  _handleInputInteraction(event) {
+    const preview = this.element.querySelector(".d-editor-preview-wrapper");
 
-    schedule("afterRender", () => {
-      $input.on("touchstart mouseenter", () => {
-        if (!$preview.is(":visible")) {
-          return;
-        }
-        $preview.off("scroll");
+    if (!$(preview).is(":visible")) {
+      return;
+    }
 
-        $input.on("scroll", () => {
-          this._syncScroll(this._syncEditorAndPreviewScroll, $input, $preview);
-        });
-      });
+    preview.removeEventListener("scroll", this._handleInputOrPreviewScroll);
+    event.target.addEventListener("scroll", this._handleInputOrPreviewScroll);
+  },
 
-      $preview.on("touchstart mouseenter", () => {
-        $input.off("scroll");
+  @bind
+  _handleInputOrPreviewScroll(event) {
+    this._syncScroll(
+      this._syncEditorAndPreviewScroll,
+      $(event.target),
+      $(this.element.querySelector(".d-editor-preview-wrapper"))
+    );
+  },
 
-        $preview.on("scroll", () => {
-          this._syncScroll(this._syncPreviewAndEditorScroll, $input, $preview);
-        });
-      });
-    });
+  @bind
+  _handlePreviewInteraction(event) {
+    this.element
+      .querySelector(".d-editor-input")
+      ?.removeEventListener("scroll", this._handleInputOrPreviewScroll);
+
+    event.target?.addEventListener("scroll", this._handleInputOrPreviewScroll);
   },
 
   _syncScroll($callback, $input, $preview) {
@@ -350,20 +345,6 @@ export default Component.extend(ComposerUpload, {
     }
 
     throttle(this, $callback, $input, $preview, this.scrollMap, 20);
-  },
-
-  _teardownInputPreviewSync() {
-    [
-      $(this.element.querySelector(".d-editor-input")),
-      $(this.element.querySelector(".d-editor-preview-wrapper")),
-    ].forEach(($element) => {
-      $element.off("mouseenter touchstart");
-      $element.off("scroll");
-    });
-
-    REBUILD_SCROLL_MAP_EVENTS.forEach((event) => {
-      this.appEvents.off(event, this, this._resetShouldBuildScrollMap);
-    });
   },
 
   // Adapted from https://github.com/markdown-it/markdown-it.github.io
@@ -453,78 +434,52 @@ export default Component.extend(ComposerUpload, {
     return scrollMap;
   },
 
-  _syncEditorAndPreviewScroll($input, $preview, scrollMap) {
-    if (this._enableAdvancedEditorPreviewSync()) {
-      let scrollTop;
-      const inputHeight = $input.height();
-      const inputScrollHeight = $input[0].scrollHeight;
-      const inputClientHeight = $input[0].clientHeight;
-      const scrollable = inputScrollHeight > inputClientHeight;
+  @bind
+  _throttledSyncEditorAndPreviewScroll(event) {
+    const $preview = $(this.element.querySelector(".d-editor-preview-wrapper"));
 
-      if (
-        scrollable &&
-        inputHeight + $input.scrollTop() + 100 > inputScrollHeight
-      ) {
-        scrollTop = $preview[0].scrollHeight;
-      } else {
-        const lineHeight = parseFloat($input.css("line-height"));
-        const lineNumber = Math.floor($input.scrollTop() / lineHeight);
-        scrollTop = scrollMap[lineNumber];
-      }
-
-      $preview.stop(true).animate({ scrollTop }, 100, "linear");
-    } else {
-      if (!$input) {
-        return;
-      }
-
-      if ($input.scrollTop() === 0) {
-        $preview.scrollTop(0);
-        return;
-      }
-
-      const inputHeight = $input[0].scrollHeight;
-      const previewHeight = $preview[0].scrollHeight;
-
-      if ($input.height() + $input.scrollTop() + 100 > inputHeight) {
-        // cheat, special case for bottom
-        $preview.scrollTop(previewHeight);
-        return;
-      }
-
-      const scrollPosition = $input.scrollTop();
-      const factor = previewHeight / inputHeight;
-      const desired = scrollPosition * factor;
-      $preview.scrollTop(desired + 50);
-    }
+    throttle(
+      this,
+      this._syncEditorAndPreviewScroll,
+      $(event.target),
+      $preview,
+      20
+    );
   },
 
-  _syncPreviewAndEditorScroll($input, $preview, scrollMap) {
-    if (scrollMap.length < 1) {
+  _syncEditorAndPreviewScroll($input, $preview) {
+    if (!$input) {
       return;
     }
 
-    let scrollTop;
-    const previewScrollTop = $preview.scrollTop();
-
-    if ($preview.height() + previewScrollTop + 100 > $preview[0].scrollHeight) {
-      scrollTop = $input[0].scrollHeight;
-    } else {
-      const lineHeight = parseFloat($input.css("line-height"));
-      scrollTop =
-        lineHeight * scrollMap.findIndex((offset) => offset > previewScrollTop);
+    if ($input.scrollTop() === 0) {
+      $preview.scrollTop(0);
+      return;
     }
 
-    $input.stop(true).animate({ scrollTop }, 100, "linear");
+    const inputHeight = $input[0].scrollHeight;
+    const previewHeight = $preview[0].scrollHeight;
+
+    if ($input.height() + $input.scrollTop() + 100 > inputHeight) {
+      // cheat, special case for bottom
+      $preview.scrollTop(previewHeight);
+      return;
+    }
+
+    const scrollPosition = $input.scrollTop();
+    const factor = previewHeight / inputHeight;
+    const desired = scrollPosition * factor;
+    $preview.scrollTop(desired + 50);
   },
 
   _renderUnseenMentions(preview, unseen) {
     // 'Create a New Topic' scenario is not supported (per conversation with codinghorror)
     // https://meta.discourse.org/t/taking-another-1-7-release-task/51986/7
-    fetchUnseenMentions(unseen, this.get("composer.topic.id")).then(() => {
+    fetchUnseenMentions(unseen, this.get("composer.topic.id")).then((r) => {
       linkSeenMentions(preview, this.siteSettings);
       this._warnMentionedGroups(preview);
       this._warnCannotSeeMention(preview);
+      this._warnHereMention(r.here_count);
     });
   },
 
@@ -586,7 +541,7 @@ export default Component.extend(ComposerUpload, {
                   `.mention.cannot-see[data-name="${name}"]`
                 )?.length > 0
               ) {
-                this.cannotSeeMention([{ name }]);
+                this.cannotSeeMention([{ name, reason: cannotSee[name] }]);
                 found.push(name);
               }
             },
@@ -599,91 +554,159 @@ export default Component.extend(ComposerUpload, {
     });
   },
 
-  _registerImageScaleButtonClick($preview) {
-    $preview.off("click", ".scale-btn").on("click", ".scale-btn", (e) => {
-      const index = parseInt(
-        $(e.target).closest(".button-wrapper").attr("data-image-index"),
-        10
-      );
-
-      const scale = e.target.attributes["data-scale"].value;
-      const matchingPlaceholder = this.get("composer.reply").match(
-        IMAGE_MARKDOWN_REGEX
-      );
-
-      if (matchingPlaceholder) {
-        const match = matchingPlaceholder[index];
-
-        if (match) {
-          const replacement = match.replace(
-            IMAGE_MARKDOWN_REGEX,
-            `![$1|$2, ${scale}%$4]($5)`
-          );
-
-          this.appEvents.trigger(
-            "composer:replace-text",
-            matchingPlaceholder[index],
-            replacement,
-            { regex: IMAGE_MARKDOWN_REGEX, index }
-          );
-        }
-      }
-
-      e.preventDefault();
+  _warnHereMention(hereCount) {
+    if (!hereCount || hereCount === 0) {
       return;
-    });
+    }
+
+    later(
+      this,
+      () => {
+        this.hereMention(hereCount);
+      },
+      2000
+    );
   },
 
-  _registerImageAltTextButtonClick($preview) {
-    $preview
-      .off("click", ".alt-text-edit-btn")
-      .on("click", ".alt-text-edit-btn", (e) => {
-        const parentContainer = $(e.target).closest(
-          ".alt-text-readonly-container"
+  @bind
+  _handleImageScaleButtonClick(event) {
+    if (!event.target.classList.contains("scale-btn")) {
+      return;
+    }
+
+    const index = parseInt(
+      event.target.closest(".button-wrapper").dataset.imageIndex,
+      10
+    );
+
+    const scale = event.target.dataset.scale;
+    const matchingPlaceholder = this.get("composer.reply").match(
+      IMAGE_MARKDOWN_REGEX
+    );
+
+    if (matchingPlaceholder) {
+      const match = matchingPlaceholder[index];
+
+      if (match) {
+        const replacement = match.replace(
+          IMAGE_MARKDOWN_REGEX,
+          `![$1|$2, ${scale}%$4]($5)`
         );
-        const altText = parentContainer.find(".alt-text");
-        const correspondingInput = parentContainer.find(".alt-text-input");
 
-        $(e.target).hide();
-        altText.hide();
-        correspondingInput.val(altText.text());
-        correspondingInput.show();
-        e.preventDefault();
-      });
+        this.appEvents.trigger(
+          "composer:replace-text",
+          matchingPlaceholder[index],
+          replacement,
+          { regex: IMAGE_MARKDOWN_REGEX, index }
+        );
+      }
+    }
 
-    $preview
-      .off("keypress", ".alt-text-input")
-      .on("keypress", ".alt-text-input", (e) => {
-        if (e.key === "[" || e.key === "]") {
-          e.preventDefault();
-        }
+    event.preventDefault();
+    return;
+  },
 
-        if (e.key === "Enter") {
-          const index = parseInt(
-            $(e.target).closest(".button-wrapper").attr("data-image-index"),
-            10
-          );
-          const matchingPlaceholder = this.get("composer.reply").match(
-            IMAGE_MARKDOWN_REGEX
-          );
-          const match = matchingPlaceholder[index];
-          const replacement = match.replace(
-            IMAGE_MARKDOWN_REGEX,
-            `![${$(e.target).val()}|$2$3$4]($5)`
-          );
+  resetImageControls(buttonWrapper) {
+    const imageResize = buttonWrapper.querySelector(".scale-btn-container");
+    const readonlyContainer = buttonWrapper.querySelector(
+      ".alt-text-readonly-container"
+    );
+    const editContainer = buttonWrapper.querySelector(
+      ".alt-text-edit-container"
+    );
 
-          this.appEvents.trigger("composer:replace-text", match, replacement);
+    imageResize.removeAttribute("hidden");
+    readonlyContainer.removeAttribute("hidden");
+    buttonWrapper.removeAttribute("editing");
+    editContainer.setAttribute("hidden", "true");
+  },
 
-          const parentContainer = $(e.target).closest(
-            ".alt-text-readonly-container"
-          );
-          const altText = parentContainer.find(".alt-text");
-          const altTextButton = parentContainer.find(".alt-text-edit-btn");
-          altText.show();
-          altTextButton.show();
-          $(e.target).hide();
-        }
-      });
+  commitAltText(buttonWrapper) {
+    const index = parseInt(buttonWrapper.getAttribute("data-image-index"), 10);
+    const matchingPlaceholder = this.get("composer.reply").match(
+      IMAGE_MARKDOWN_REGEX
+    );
+    const match = matchingPlaceholder[index];
+    const input = buttonWrapper.querySelector("input.alt-text-input");
+    const replacement = match.replace(
+      IMAGE_MARKDOWN_REGEX,
+      `![${input.value}|$2$3$4]($5)`
+    );
+
+    this.appEvents.trigger("composer:replace-text", match, replacement);
+
+    this.resetImageControls(buttonWrapper);
+  },
+
+  @bind
+  _handleAltTextInputKeypress(event) {
+    if (!event.target.classList.contains("alt-text-input")) {
+      return;
+    }
+
+    if (event.key === "[" || event.key === "]") {
+      event.preventDefault();
+    }
+
+    if (event.key === "Enter") {
+      const buttonWrapper = event.target.closest(".button-wrapper");
+      this.commitAltText(buttonWrapper);
+    }
+  },
+
+  @bind
+  _handleAltTextEditButtonClick(event) {
+    if (!event.target.classList.contains("alt-text-edit-btn")) {
+      return;
+    }
+
+    const buttonWrapper = event.target.closest(".button-wrapper");
+    const imageResize = buttonWrapper.querySelector(".scale-btn-container");
+
+    const readonlyContainer = buttonWrapper.querySelector(
+      ".alt-text-readonly-container"
+    );
+    const altText = readonlyContainer.querySelector(".alt-text");
+
+    const editContainer = buttonWrapper.querySelector(
+      ".alt-text-edit-container"
+    );
+    const editContainerInput = editContainer.querySelector(".alt-text-input");
+
+    buttonWrapper.setAttribute("editing", "true");
+    imageResize.setAttribute("hidden", "true");
+    readonlyContainer.setAttribute("hidden", "true");
+    editContainerInput.value = altText.textContent;
+    editContainer.removeAttribute("hidden");
+    editContainerInput.focus();
+    event.preventDefault();
+  },
+
+  @bind
+  _handleAltTextOkButtonClick(event) {
+    if (!event.target.classList.contains("alt-text-edit-ok")) {
+      return;
+    }
+
+    const buttonWrapper = event.target.closest(".button-wrapper");
+    this.commitAltText(buttonWrapper);
+  },
+
+  @bind
+  _handleAltTextCancelButtonClick(event) {
+    if (!event.target.classList.contains("alt-text-edit-cancel")) {
+      return;
+    }
+
+    const buttonWrapper = event.target.closest(".button-wrapper");
+    this.resetImageControls(buttonWrapper);
+  },
+
+  _registerImageAltTextButtonClick(preview) {
+    preview.addEventListener("click", this._handleAltTextEditButtonClick);
+    preview.addEventListener("click", this._handleAltTextOkButtonClick);
+    preview.addEventListener("click", this._handleAltTextCancelButtonClick);
+    preview.addEventListener("keypress", this._handleAltTextInputKeypress);
   },
 
   @on("willDestroyElement")
@@ -698,9 +721,19 @@ export default Component.extend(ComposerUpload, {
       );
     });
 
-    if (this._enableAdvancedEditorPreviewSync()) {
-      this._teardownInputPreviewSync();
-    }
+    this.element
+      .querySelector(".d-editor-input")
+      ?.removeEventListener(
+        "scroll",
+        this._throttledSyncEditorAndPreviewScroll
+      );
+
+    const preview = this.element.querySelector(".d-editor-preview-wrapper");
+    preview?.removeEventListener("click", this._handleImageScaleButtonClick);
+    preview?.removeEventListener("click", this._handleAltTextEditButtonClick);
+    preview?.removeEventListener("click", this._handleAltTextOkButtonClick);
+    preview?.removeEventListener("click", this._handleAltTextCancelButtonClick);
+    preview?.removeEventListener("keypress", this._handleAltTextInputKeypress);
   },
 
   onExpandPopupMenuOptions(toolbarEvent) {
@@ -855,16 +888,8 @@ export default Component.extend(ComposerUpload, {
       // Short upload urls need resolution
       resolveAllShortUrls(ajax, this.siteSettings, preview);
 
-      if (this._enableAdvancedEditorPreviewSync()) {
-        this._syncScroll(
-          this._syncEditorAndPreviewScroll,
-          $(this.element.querySelector(".d-editor-input")),
-          $preview
-        );
-      }
-
-      this._registerImageScaleButtonClick($preview);
-      this._registerImageAltTextButtonClick($preview);
+      preview.addEventListener("click", this._handleImageScaleButtonClick);
+      this._registerImageAltTextButtonClick(preview);
 
       this.trigger("previewRefreshed", preview);
       this.afterRefresh($preview);

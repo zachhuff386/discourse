@@ -252,9 +252,9 @@ class Search
 
   # Query a term
   def execute(readonly_mode: Discourse.readonly_mode?)
-    if SiteSetting.log_search_queries? && @opts[:search_type].present? && !readonly_mode
+    if log_query?(readonly_mode)
       status, search_log_id = SearchLog.log(
-        term: @term,
+        term: @clean_term,
         search_type: @opts[:search_type],
         ip_address: @opts[:ip_address],
         user_id: @opts[:user_id]
@@ -583,7 +583,11 @@ class Search
   end
 
   advanced_filter(/^group:(.+)$/i) do |posts, match|
-    group_id = Group.where('name ilike ? OR (id = ? AND id > 0)', match, match.to_i).pluck_first(:id)
+    group_id = Group
+      .visible_groups(@guardian.user)
+      .members_visible_groups(@guardian.user)
+      .where('name ilike ? OR (id = ? AND id > 0)', match, match.to_i).pluck_first(:id)
+
     if group_id
       posts.where("posts.user_id IN (select gu.user_id from group_users gu where gu.group_id = ?)", group_id)
     else
@@ -1294,4 +1298,10 @@ class Search
     end
   end
 
+  def log_query?(readonly_mode)
+    SiteSetting.log_search_queries? &&
+    @opts[:search_type].present? &&
+    !readonly_mode &&
+    @opts[:type_filter] != "exclude_topics"
+  end
 end

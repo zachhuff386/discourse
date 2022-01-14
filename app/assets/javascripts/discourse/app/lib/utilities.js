@@ -5,6 +5,7 @@ import { deepMerge } from "discourse-common/lib/object";
 import { escape } from "pretty-text/sanitizer";
 import { helperContext } from "discourse-common/lib/helpers";
 import toMarkdown from "discourse/lib/to-markdown";
+import deprecated from "discourse-common/lib/deprecated";
 
 let _defaultHomepage;
 
@@ -133,12 +134,19 @@ export function highlightPost(postNumber) {
     element.removeEventListener("animationend", removeHighlighted);
   };
   element.addEventListener("animationend", removeHighlighted);
+  container.querySelector(".tabLoc").focus();
 }
 
 export function emailValid(email) {
   // see:  http://stackoverflow.com/questions/46155/validate-email-address-in-javascript
   const re = /^[a-zA-Z0-9!#$%&'*+\/=?\^_`{|}~\-]+(?:\.[a-zA-Z0-9!#$%&'\*+\/=?\^_`{|}~\-]+)*@(?:[a-zA-Z0-9](?:[a-zA-Z0-9\-]*[a-zA-Z0-9])?\.)+[a-zA-Z0-9](?:[a-zA-Z0-9\-]*[a-zA-Z0-9])?$/;
   return re.test(email);
+}
+
+export function hostnameValid(hostname) {
+  // see:  https://stackoverflow.com/questions/106179/regular-expression-to-match-dns-hostname-or-ip-address
+  const re = /^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)+([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$/;
+  return hostname && re.test(hostname);
 }
 
 export function extractDomainFromUrl(url) {
@@ -306,10 +314,6 @@ export function isAppleDevice() {
 
 let iPadDetected = undefined;
 
-export function iOSWithVisualViewport() {
-  return isAppleDevice() && window.visualViewport !== undefined;
-}
-
 export function isiPad() {
   if (iPadDetected === undefined) {
     iPadDetected =
@@ -320,16 +324,15 @@ export function isiPad() {
 }
 
 export function safariHacksDisabled() {
-  if (iOSWithVisualViewport()) {
-    return false;
-  }
+  deprecated(
+    "`safariHacksDisabled()` is deprecated, it now always returns `false`",
+    {
+      since: "2.8.0.beta8",
+      dropFrom: "2.9.0.beta1",
+    }
+  );
 
-  let pref = localStorage.getItem("safari-hacks-disabled");
-  let result = false;
-  if (pref !== null) {
-    result = pref === "true";
-  }
-  return result;
+  return false;
 }
 
 const toArray = (items) => {
@@ -478,9 +481,9 @@ export function inCodeBlock(text, pos) {
 }
 
 export function translateModKey(string) {
-  const mac = /Mac|iPod|iPhone|iPad/.test(navigator.platform);
-  // Mac users are used to glyphs for shortcut keys
-  if (mac) {
+  const { isApple } = helperContext().capabilities;
+  // Apple device users are used to glyphs for shortcut keys
+  if (isApple) {
     string = string
       .replace("Shift", "\u21E7")
       .replace("Meta", "\u2318")

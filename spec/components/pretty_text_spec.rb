@@ -4,6 +4,8 @@ require 'rails_helper'
 require 'pretty_text'
 
 describe PrettyText do
+  fab!(:user) { Fabricate(:user) }
+  fab!(:post) { Fabricate(:post) }
 
   before do
     SiteSetting.enable_markdown_typographer = false
@@ -23,7 +25,6 @@ describe PrettyText do
 
     describe "with avatar" do
       let(:default_avatar) { "//test.localhost/uploads/default/avatars/42d/57c/46ce7ee487/{size}.png" }
-      fab!(:user) { Fabricate(:user) }
 
       before do
         User.stubs(:default_template).returns(default_avatar)
@@ -349,8 +350,6 @@ describe PrettyText do
     end
 
     describe "with letter avatar" do
-      fab!(:user) { Fabricate(:user) }
-
       context "subfolder" do
         it "should have correct avatar url" do
           set_subfolder "/forum"
@@ -455,8 +454,6 @@ describe PrettyText do
       end
 
       it 'should not convert mentions to links' do
-        _user = Fabricate(:user)
-
         expect(PrettyText.cook('hi @user')).to eq('<p>hi @user</p>')
       end
     end
@@ -550,6 +547,95 @@ describe PrettyText do
         expect(PrettyText.cook("# banana")).not_to include('banana')
       ensure
         Discourse.redis.flushdb
+      end
+    end
+
+    it "strips out unicode bidirectional (bidi) override characters and replaces with a highlighted span" do
+      code = <<~MD
+         X
+         ```js
+         var isAdmin = false;
+         /*‮ begin admin only */⁦ if (isAdmin) ⁩ ⁦ {
+         console.log("You are an admin.");
+         /* end admins only ‮*/⁦ }
+         ```
+      MD
+      cooked = PrettyText.cook(code)
+      hidden_bidi_title = I18n.t("post.hidden_bidi_character")
+
+      html = <<~HTML
+        <p>X</p>
+        <pre><code class="lang-auto">var isAdmin = false;
+        /*<span class="bidi-warning" title="#{hidden_bidi_title}">&lt;U+202E&gt;</span> begin admin only */<span class="bidi-warning" title="#{hidden_bidi_title}">&lt;U+2066&gt;</span> if (isAdmin) <span class="bidi-warning" title="#{hidden_bidi_title}">&lt;U+2069&gt;</span> <span class="bidi-warning" title="#{hidden_bidi_title}">&lt;U+2066&gt;</span> {
+        console.log("You are an admin.");
+        /* end admins only <span class="bidi-warning" title="#{hidden_bidi_title}">&lt;U+202E&gt;</span>*/<span class="bidi-warning" title="#{hidden_bidi_title}">&lt;U+2066&gt;</span> }
+        </code></pre>
+      HTML
+
+      expect(cooked).to eq(html.strip)
+    end
+
+    it "fuzzes all possible dangerous unicode bidirectional (bidi) override characters, making sure they are replaced" do
+      bad_bidi = [
+        "\u202A",
+        "\u202B",
+        "\u202C",
+        "\u202D",
+        "\u202E",
+        "\u2066",
+        "\u2067",
+        "\u2068",
+        "\u2069",
+      ]
+      bad_bidi.each do |bidi|
+        code = <<~MD
+        ```
+        #{bidi}
+        ```
+        MD
+        cooked = PrettyText.cook(code)
+        formatted_bidi = format("&lt;U+%04X&gt;", bidi.ord)
+        html = <<~HTML
+          <pre><code class="lang-auto"><span class="bidi-warning" title="#{I18n.t("post.hidden_bidi_character")}">#{formatted_bidi}</span>
+          </code></pre>
+        HTML
+        expect(cooked).to eq(html.strip)
+      end
+    end
+
+    it "fuzzes all possible dangerous unicode bidirectional (bidi) override characters in solo code and pre nodes, making sure they are replaced" do
+      bad_bidi = [
+        "\u202A",
+        "\u202B",
+        "\u202C",
+        "\u202D",
+        "\u202E",
+        "\u2066",
+        "\u2067",
+        "\u2068",
+        "\u2069",
+      ]
+      bad_bidi.each do |bidi|
+        code = <<~MD
+        <code>#{bidi}</code>
+        MD
+        cooked = PrettyText.cook(code)
+        formatted_bidi = format("&lt;U+%04X&gt;", bidi.ord)
+        html = <<~HTML
+          <p><code><span class="bidi-warning" title="#{I18n.t("post.hidden_bidi_character")}">#{formatted_bidi}</span></code></p>
+        HTML
+        expect(cooked).to eq(html.strip)
+      end
+      bad_bidi.each do |bidi|
+        code = <<~MD
+        <pre>#{bidi}</pre>
+        MD
+        cooked = PrettyText.cook(code)
+        formatted_bidi = format("&lt;U+%04X&gt;", bidi.ord)
+        html = <<~HTML
+          <pre><span class="bidi-warning" title="#{I18n.t("post.hidden_bidi_character")}">#{formatted_bidi}</span></pre>
+        HTML
+        expect(cooked).to eq(html.strip)
       end
     end
   end
@@ -938,7 +1024,6 @@ describe PrettyText do
 
   describe 'format_for_email' do
     let(:base_url) { "http://baseurl.net" }
-    fab!(:post) { Fabricate(:post) }
 
     before do
       Discourse.stubs(:base_url).returns(base_url)
@@ -1559,7 +1644,7 @@ HTML
   end
 
   it "can onebox local topics" do
-    op = Fabricate(:post)
+    op = post
     reply = Fabricate(:post, topic_id: op.topic_id)
 
     url = Discourse.base_url + reply.url
@@ -1986,5 +2071,33 @@ HTML
     HTML
 
     expect(cooked).to match_html(html)
+  end
+
+  context "customizing markdown-it rules" do
+    it 'customizes the markdown-it rules correctly' do
+      cooked = PrettyText.cook('This is some text **bold**', markdown_it_rules: [])
+
+      expect(cooked).to eq("<p>This is some text **bold**</p>")
+
+      cooked = PrettyText.cook('This is some text **bold**', markdown_it_rules: ["emphasis"])
+
+      expect(cooked).to eq("<p>This is some text <strong>bold</strong></p>")
+    end
+  end
+
+  context "enabling/disabling features" do
+    it "allows features to be overriden" do
+      cooked = PrettyText.cook(':grin: @mention', features_override: [])
+
+      expect(cooked).to eq("<p>:grin: @mention</p>")
+
+      cooked = PrettyText.cook(':grin: @mention', features_override: ["emoji"])
+
+      expect(cooked).to eq("<p><img src=\"/images/emoji/twitter/grin.png?v=#{Emoji::EMOJI_VERSION}\" title=\":grin:\" class=\"emoji\" alt=\":grin:\"> @mention</p>")
+
+      cooked = PrettyText.cook(':grin: @mention', features_override: ["mentions", "text-post-process"])
+
+      expect(cooked).to eq("<p>:grin: <span class=\"mention\">@mention</span></p>")
+    end
   end
 end

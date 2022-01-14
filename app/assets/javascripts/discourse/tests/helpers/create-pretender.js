@@ -136,8 +136,8 @@ export function applyDefaultHandlers(pretender) {
   pretender.get("/tags/filter/search", () => {
     return response({
       results: [
-        { text: "monkey", count: 1 },
-        { text: "gazelle", count: 2 },
+        { id: "monkey", name: "monkey", count: 1 },
+        { id: "gazelle", name: "gazelle", count: 2 },
       ],
     });
   });
@@ -281,6 +281,9 @@ export function applyDefaultHandlers(pretender) {
   pretender.get("/t/2480.json", () =>
     response(fixturesByUrl["/t/2480/1.json"])
   );
+  pretender.get("/t/2481.json", () =>
+    response(fixturesByUrl["/t/2481/1.json"])
+  );
 
   pretender.get("/t/id_for/:slug", () => {
     return response({
@@ -342,6 +345,10 @@ export function applyDefaultHandlers(pretender) {
 
   pretender.get("/c/1-category/find_by_slug.json", () =>
     response(fixturesByUrl["/c/1/show.json"])
+  );
+
+  pretender.get("/c/restricted-group/find_by_slug.json", () =>
+    response(fixturesByUrl["/c/2481/show.json"])
   );
 
   pretender.put("/categories/:category_id", (request) => {

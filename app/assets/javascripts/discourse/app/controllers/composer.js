@@ -296,15 +296,6 @@ export default Controller.extend({
     return option;
   },
 
-  @discourseComputed()
-  composerComponent() {
-    const defaultComposer = "composer-editor";
-    if (this.siteSettings.enable_experimental_composer_uploader) {
-      return "composer-editor-uppy";
-    }
-    return defaultComposer;
-  },
-
   @discourseComputed("model.requiredCategoryMissing", "model.replyLength")
   disableTextarea(requiredCategoryMissing, replyLength) {
     return requiredCategoryMissing && replyLength === 0;
@@ -641,7 +632,9 @@ export default Controller.extend({
 
     save(ignore, event) {
       this.save(false, {
-        jump: !event?.shiftKey && !this.skipJumpOnSave,
+        jump:
+          !(event?.shiftKey && this.get("model.replyingToTopic")) &&
+          !this.skipJumpOnSave,
       });
     },
 
@@ -675,17 +668,19 @@ export default Controller.extend({
         groups.forEach((group) => {
           let body;
           const groupLink = getURL(`/g/${group.name}/members`);
+          const maxMentions = parseInt(group.max_mentions, 10);
+          const userCount = parseInt(group.user_count, 10);
 
-          if (group.max_mentions < group.user_count) {
+          if (maxMentions < userCount) {
             body = I18n.t("composer.group_mentioned_limit", {
               group: `@${group.name}`,
-              count: group.max_mentions,
+              count: maxMentions,
               group_link: groupLink,
             });
           } else if (group.user_count > 0) {
             body = I18n.t("composer.group_mentioned", {
               group: `@${group.name}`,
-              count: group.user_count,
+              count: userCount,
               group_link: groupLink,
             });
           }
@@ -703,17 +698,24 @@ export default Controller.extend({
 
     cannotSeeMention(mentions) {
       mentions.forEach((mention) => {
-        const translation = this.get("model.topic.isPrivateMessage")
-          ? "composer.cannot_see_mention.private"
-          : "composer.cannot_see_mention.category";
-        const body = I18n.t(translation, {
-          username: `@${mention.name}`,
-        });
         this.appEvents.trigger("composer-messages:create", {
           extraClass: "custom-body",
           templateName: "custom-body",
-          body,
+          body: I18n.t(`composer.cannot_see_mention.${mention.reason}`, {
+            username: mention.name,
+          }),
         });
+      });
+    },
+
+    hereMention(count) {
+      this.appEvents.trigger("composer-messages:create", {
+        extraClass: "custom-body",
+        templateName: "custom-body",
+        body: I18n.t("composer.here_mention", {
+          here: this.siteSettings.here_mention,
+          count,
+        }),
       });
     },
 
@@ -890,7 +892,11 @@ export default Controller.extend({
 
         if (result.responseJson.action === "create_post") {
           this.appEvents.trigger("composer:created-post");
-          this.appEvents.trigger("post:highlight", result.payload.post_number);
+          this.appEvents.trigger(
+            "post:highlight",
+            result.payload.post_number,
+            options
+          );
         }
 
         if (this.get("model.draftKey") === Composer.NEW_TOPIC_KEY) {
@@ -1393,6 +1399,7 @@ export default Controller.extend({
 
     const elem = document.querySelector("html");
     elem.classList.remove("fullscreen-composer");
+    elem.classList.remove("composer-open");
 
     document.activeElement && document.activeElement.blur();
     this.setProperties({ model: null, lastValidatedAt: null });
@@ -1410,5 +1417,9 @@ export default Controller.extend({
   @discourseComputed("model.composeState")
   visible(state) {
     return state && state !== "closed";
+  },
+
+  clearLastValidatedAt() {
+    this.set("lastValidatedAt", null);
   },
 });
