@@ -10,57 +10,7 @@ class ThemeJavascriptCompiler
 
     def discourse_node_manipulator
       <<~JS
-
-      // Helper to replace old themeSetting syntax
-      function generateHelper(settingParts) {
-        const settingName = settingParts.join('.');
-        return {
-            "path": {
-              "type": "PathExpression",
-              "original": "theme-setting",
-              "this": false,
-              "data": false,
-              "parts": [
-                "theme-setting"
-              ],
-              "depth":0
-            },
-            "params": [
-              {
-                type: "NumberLiteral",
-                value: #{@theme_id},
-                original: #{@theme_id}
-              },
-              {
-                "type": "StringLiteral",
-                "value": settingName,
-                "original": settingName
-              }
-            ],
-            "hash": {
-              "type": "Hash",
-              "pairs": [
-                {
-                  "type": "HashPair",
-                  "key": "deprecated",
-                  "value": {
-                    "type": "BooleanLiteral",
-                    "value": true,
-                    "original": true
-                  }
-                }
-              ]
-            }
-          }
-      }
-
       function manipulatePath(path) {
-        // Override old themeSetting syntax when it's a param inside another node
-        if(path.parts && path.parts[0] == "themeSettings"){
-          const settingParts = path.parts.slice(1);
-          path.type = "SubExpression";
-          Object.assign(path, generateHelper(settingParts))
-        }
       }
 
       function manipulateNode(node) {
@@ -73,11 +23,6 @@ class ThemeJavascriptCompiler
               original: #{@theme_id}
             })
           }
-        }
-
-        // Override old themeSetting syntax when it's in its own node
-        if (node.path.parts && node.path.parts[0] == "themeSettings") {
-          Object.assign(node, generateHelper(node.path.parts.slice(1)))
         }
       }
       JS
@@ -95,23 +40,6 @@ class ThemeJavascriptCompiler
       <<~JS
         let _superCompile = Handlebars.Compiler.prototype.compile;
         Handlebars.Compiler.prototype.compile = function(program, options) {
-
-          // `replaceGet()` in raw-handlebars.js.es6 adds a `get` in front of things
-          // so undo this specific case for the old themeSettings.blah syntax
-          let visitor = new Handlebars.Visitor();
-          visitor.mutating = true;
-          visitor.MustacheStatement = (node) => {
-            if(node.path.original == 'get'
-              && node.params
-              && node.params[0]
-              && node.params[0].parts
-              && node.params[0].parts[0] == 'themeSettings'){
-                node.path.parts = node.params[0].parts
-                node.params = []
-            }
-          };
-          visitor.accept(program);
-
           [
             ["SubExpression", manipulateNode],
             ["MustacheStatement", manipulateNode],

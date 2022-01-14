@@ -54,15 +54,6 @@ describe ThemeJavascriptCompiler do
         to eq('dummy(theme_translations.22.translation_key)')
     end
 
-    it 'works with the old settings syntax' do
-      expect(render("{{themeSettings.setting_key}}")).
-        to eq('setting(22:setting_key)')
-
-      # Works when used inside other statements
-      expect(render("{{dummy-helper themeSettings.setting_key}}")).
-        to eq('dummy(setting(22:setting_key))')
-    end
-
     it "doesn't duplicate number parameter inside {{each}}" do
       expect(compiler.compile("{{#each item as |test test2|}}{{theme-setting 'setting_key'}}{{/each}}")).
         to include('{"name":"theme-setting","hash":{},"hashTypes":{},"hashContexts":{},"types":["NumberLiteral","StringLiteral"]')
@@ -98,15 +89,6 @@ describe ThemeJavascriptCompiler do
       # Works when used inside other statements
       expect(statement("{{dummy-helper (theme-prefix 'translation_key')}}")).
         to eq([[1, [helper_opcode, "dummy-helper", [[helper_opcode, "theme-prefix", [22, "translation_key"], nil]], nil], false]])
-    end
-
-    it 'works with the old settings syntax' do
-      expect(statement("{{themeSettings.setting_key}}")).
-        to eq([[1, [helper_opcode, "theme-setting", [22, "setting_key"], [["deprecated"], [true]]], false]])
-
-      # Works when used inside other statements
-      expect(statement("{{dummy-helper themeSettings.setting_key}}")).
-        to eq([[1, [helper_opcode, "dummy-helper", [[helper_opcode, "theme-setting", [22, "setting_key"], [["deprecated"], [true]]]], nil], false]])
     end
   end
 
