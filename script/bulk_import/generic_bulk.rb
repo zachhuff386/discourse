@@ -165,7 +165,8 @@ class BulkImport::Generic < BulkImport::Base
         topic_id: topic_id,
         user_id: user_id_from_imported_id(row["user_id"]),
         created_at: to_datetime(row["created_at"]),
-        raw: row["raw"]
+        raw: row["raw"],
+        like_count: row["like_count"]
       }
     end
   end
@@ -192,7 +193,7 @@ class BulkImport::Generic < BulkImport::Base
         post_id: post_id_from_imported_id(row["post_id"]),
         user_id: user_id_from_imported_id(row["user_id"]),
         post_action_type_id: 2,
-        created_at: Time.zone.at(row["created_at"])
+        created_at: to_datetime(row["created_at"])
       }
     end
   end
