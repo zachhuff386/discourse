@@ -578,6 +578,7 @@ class BulkImport::Base
     if @bbcode_to_md
       post[:raw] = post[:raw].bbcode_to_md(false, {}, :disable, :quote) rescue post[:raw]
     end
+    post[:raw] = normalize_text(post[:raw])
     post[:like_count] ||= 0
     post[:cooked] = pre_cook post[:raw]
     post[:hidden] ||= false

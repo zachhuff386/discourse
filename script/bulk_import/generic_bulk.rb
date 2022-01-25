@@ -28,6 +28,7 @@ class BulkImport::Generic < BulkImport::Base
     import_single_sign_on_records
     import_topics
     import_posts
+    import_likes
   end
 
   def import_categories
@@ -165,6 +166,33 @@ class BulkImport::Generic < BulkImport::Base
         user_id: user_id_from_imported_id(row["user_id"]),
         created_at: to_datetime(row["created_at"]),
         raw: row["raw"]
+      }
+    end
+  end
+
+  def import_likes
+    puts "Importing likes..."
+
+    @imported_likes = Set.new
+
+    likes = @db.execute(<<~SQL)
+      SELECT ROWID, *
+      FROM likes
+      ORDER BY ROWID
+    SQL
+
+    create_post_actions(likes) do |row|
+      post_id = post_id_from_imported_id(row["post_id"])
+      user_id = user_id_from_imported_id(row["user_id"])
+
+      next if post_id.nil? || user_id.nil?
+      next if @imported_likes.add?([post_id, user_id]).nil?
+
+      {
+        post_id: post_id_from_imported_id(row["post_id"]),
+        user_id: user_id_from_imported_id(row["user_id"]),
+        post_action_type_id: 2,
+        created_at: Time.zone.at(row["created_at"])
       }
     end
   end
