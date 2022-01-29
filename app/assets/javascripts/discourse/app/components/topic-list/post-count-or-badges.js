@@ -1,15 +1,17 @@
-import { and } from "@ember/object/computed";
-import EmberObject from "@ember/object";
+import GlimmerComponent from "discourse/components/glimmer";
 import I18n from "I18n";
-import discourseComputed from "discourse-common/utils/decorators";
+import { cached } from "@glimmer/tracking";
 
-export default EmberObject.extend({
-  showBadges: and("postBadgesEnabled", "topic.unread_posts"),
+export default class PostCountOrBadges extends GlimmerComponent {
+  @cached
+  get showBadges() {
+    return this.args.postBadgesEnabled && this.args.topic.unread_posts;
+  }
 
-  @discourseComputed
-  newDotText() {
+  @cached
+  get newDotText() {
     return this.currentUser && this.currentUser.trust_level > 0
       ? ""
       : I18n.t("filters.new.lower_title");
-  },
-});
+  }
+}
