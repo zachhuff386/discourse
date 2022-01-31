@@ -1,7 +1,8 @@
+<tr class="topic-list-item {{classNames}}" data-topic-id={{@topic.id}} {{on "click" click}}>
 <td class="topic-list-data">
   {{~raw-plugin-outlet name="topic-list-before-columns" context=this}}
   <div class="pull-left">
-    <a href={{topic.lastPostUrl}} data-user-card={{topic.lastPosterUser.username}}>{{avatar topic.lastPosterUser imageSize="large"}}</a>
+    <a href={{@topic.lastPostUrl}} data-user-card={{@topic.lastPosterUser.username}}>{{avatar @topic.lastPosterUser imageSize="large"}}</a>
   </div>
   <div class="right">
     {{!--
@@ -14,34 +15,34 @@
     {{~raw-plugin-outlet name="topic-list-before-link" context=this}}
     <div class="main-link">
       {{~raw-plugin-outlet name="topic-list-before-status" context=this}}
-      {{~topic-list/topic-status topic=topic~}}
-      {{~topic-link topic class="raw-link raw-topic-link"}}
+      {{~topic-list/topic-status topic=@topic~}}
+      {{~topic-link @topic class="raw-link raw-topic-link"}}
       {{~#if topic.featured_link~}}
-        {{~topic-featured-link topic~}}
+        {{~topic-featured-link @topic~}}
       {{~/if~}}
       {{~raw-plugin-outlet name="topic-list-after-title" context=this}}
-      {{~#if topic.unseen~}}
+      {{~#if @topic.unseen~}}
         <span class="topic-post-badges">&nbsp;<span class="badge-notification new-topic"></span></span>
       {{~/if~}}
       {{~#if expandPinned~}}
-        {{~topic-list/topic-excerpt topic=topic~}}
+        {{~topic-list/topic-excerpt topic=@topic~}}
       {{~/if~}}
     </div>
     <div class="pull-right">
-      {{topic-list/post-count-or-badges topic=topic postBadgesEnabled=showTopicPostBadges}}
+      {{topic-list/post-count-or-badges topic=@topic postBadgesEnabled=@showTopicPostBadges}}
     </div>
     <div class="topic-item-stats clearfix">
-      {{#unless hideCategory}}
+      {{#unless @hideCategory}}
         {{~raw-plugin-outlet name="topic-list-before-category" context=this}}
         <div class="category">
-          {{category-link topic.category}}
+          {{category-link @topic.category}}
         </div>
       {{/unless}}
-      {{discourse-tags topic mode="list"}}
+      {{discourse-tags @topic mode="list"}}
       <div class="pull-right">
         <div class="num activity last">
-          <span class="age activity" title={{topic.bumpedAtTitle}}>
-            <a href={{topic.lastPostUrl}}>{{format-date topic.bumpedAt format="tiny" noTitle="true"}}</a>
+          <span class="age activity" title={{@topic.bumpedAtTitle}}>
+            <a href={{@topic.lastPostUrl}}>{{format-date @topic.bumpedAt format="tiny" noTitle="true"}}</a>
           </span>
         </div>
       </div>
@@ -49,3 +50,4 @@
     </div>
   </div>
 </td>
+</tr>

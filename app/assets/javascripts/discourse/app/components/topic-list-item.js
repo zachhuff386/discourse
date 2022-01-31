@@ -1,12 +1,13 @@
-import discourseComputed from "discourse-common/utils/decorators";
-import Component from "@ember/component";
+import GlimmerComponent from "discourse/components/glimmer";
 import DiscourseURL from "discourse/lib/url";
 import I18n from "I18n";
-import { alias } from "@ember/object/computed";
-import { on } from "@ember/object/evented";
-import { schedule } from "@ember/runloop";
-import { topicTitleDecorators } from "discourse/components/topic-title";
+// import { alias } from "@ember/object/computed";
+// import { on } from "@ember/object/evented";
+// import { schedule } from "@ember/runloop";
+// import { topicTitleDecorators } from "discourse/components/topic-title";
 import { wantsNewWindow } from "discourse/lib/intercept-click";
+import { action } from "@ember/object";
+import { cached } from "@glimmer/tracking";
 
 export function showEntrance(e) {
   let target = $(e.target);
@@ -33,14 +34,9 @@ export function navigateToTopic(topic, href) {
   return false;
 }
 
-export default Component.extend({
-  tagName: "tr",
-  classNameBindings: [":topic-list-item", "unboundClassNames", "topic.visited"],
-  attributeBindings: ["data-topic-id", "role", "ariaLevel:aria-level"],
-  "data-topic-id": alias("topic.id"),
-
-  didInsertElement() {
-    this._super(...arguments);
+export default class TopicListItem extends GlimmerComponent {
+  constructor() {
+    super(...arguments);
 
     if (this.includeUnreadIndicator) {
       this.messageBus.subscribe(this.unreadIndicatorChannel, (data) => {
@@ -56,52 +52,53 @@ export default Component.extend({
       });
     }
 
-    schedule("afterRender", () => {
-      if (this.element && !this.isDestroying && !this.isDestroyed) {
-        const rawTopicLink = this.element.querySelector(".raw-topic-link");
+    // TODO: Make this a modifier
+    // schedule("afterRender", () => {
+    //   if (this.element && !this.isDestroying && !this.isDestroyed) {
+    //     const rawTopicLink = this.element.querySelector(".raw-topic-link");
 
-        rawTopicLink &&
-          topicTitleDecorators &&
-          topicTitleDecorators.forEach((cb) =>
-            cb(this.topic, rawTopicLink, "topic-list-item-title")
-          );
-      }
-    });
-  },
+    //     rawTopicLink &&
+    //       topicTitleDecorators &&
+    //       topicTitleDecorators.forEach((cb) =>
+    //         cb(this.topic, rawTopicLink, "topic-list-item-title")
+    //       );
+    //   }
+    // });
+  }
 
-  willDestroyElement() {
-    this._super(...arguments);
-
+  willDestroy() {
     if (this.includeUnreadIndicator) {
       this.messageBus.unsubscribe(this.unreadIndicatorChannel);
     }
-  },
+  }
 
-  @discourseComputed("topic.id")
-  unreadIndicatorChannel(topicId) {
-    return `/private-messages/unread-indicator/${topicId}`;
-  },
+  get unreadIndicatorChannel() {
+    return `/private-messages/unread-indicator/${this.args.topic.id}`;
+  }
 
-  @discourseComputed("topic.unread_by_group_member")
-  unreadClass(unreadByGroupMember) {
-    return unreadByGroupMember ? "" : "read";
-  },
+  get unreadClass() {
+    return this.args.topic.unreadByGroupMember ? "" : "read";
+  }
 
-  @discourseComputed("topic.unread_by_group_member")
-  includeUnreadIndicator(unreadByGroupMember) {
-    return typeof unreadByGroupMember !== "undefined";
-  },
+  get includeUnreadIndicator() {
+    return typeof this.args.topic.unreadByGroupMember !== "undefined";
+  }
 
-  @discourseComputed
-  newDotText() {
+  get newDotText() {
     return this.currentUser && this.currentUser.trust_level > 0
       ? ""
       : I18n.t("filters.new.lower_title");
-  },
+  }
 
-  @discourseComputed("topic", "lastVisitedTopic")
-  unboundClassNames(topic, lastVisitedTopic) {
+  @cached
+  get classNames() {
+    const topic = this.args.topic;
+    const lastVisitedTopic = this.args.lastVisitedTopic;
     let classes = [];
+
+    if (topic.visited) {
+      classes.push("visited");
+    }
 
     if (topic.category) {
       classes.push("category-" + topic.category.fullSlug);
@@ -134,19 +131,18 @@ export default Component.extend({
     }
 
     return classes.join(" ");
-  },
+  }
 
-  hasLikes() {
-    return this.topic.like_count > 0;
-  },
+  get hasLikes() {
+    return this.args.topic.like_count > 0;
+  }
 
-  hasOpLikes() {
-    return this.topic.op_like_count > 0;
-  },
+  get hasOpLikes() {
+    return this.args.topic.op_like_count > 0;
+  }
 
-  @discourseComputed
-  expandPinned() {
-    const pinned = this.topic.pinned;
+  get expandPinned() {
+    const pinned = this.args.topic.pinned;
     if (!pinned) {
       return false;
     }
@@ -161,26 +157,27 @@ export default Component.extend({
       }
     }
 
-    if (this.expandGloballyPinned && this.topic.pinned_globally) {
+    if (this.args.expandGloballyPinned && this.args.topic.pinned_globally) {
       return true;
     }
 
-    if (this.expandAllPinned) {
+    if (this.args.expandAllPinned) {
       return true;
     }
 
     return false;
-  },
+  }
 
-  showEntrance,
+  showEntrance = showEntrance;
 
-  click(e) {
+  @action click(e) {
     const result = this.showEntrance(e);
     if (result === false) {
-      return result;
+      e.preventDefault();
+      return;
     }
 
-    const topic = this.topic;
+    const topic = this.args.topic;
     const target = $(e.target);
     if (target.hasClass("bulk-select")) {
       const selected = this.selected;
@@ -194,47 +191,55 @@ export default Component.extend({
 
     if (target.hasClass("raw-topic-link")) {
       if (wantsNewWindow(e)) {
-        return true;
+        return;
       }
-      return this.navigateToTopic(topic, target.attr("href"));
+      if (this.navigateToTopic(topic, target.attr("href")) === false) {
+        e.preventDefault();
+      }
+      return;
     }
 
     if (target.closest("a.topic-status").length === 1) {
-      this.topic.togglePinnedForUser();
-      return false;
+      topic.togglePinnedForUser();
+      e.preventDefault();
+      return;
     }
 
-    return this.unhandledRowClick(e, topic);
-  },
-
-  unhandledRowClick() {},
-
-  navigateToTopic,
-
-  highlight(opts = { isLastViewedTopic: false }) {
-    schedule("afterRender", () => {
-      if (!this.element || this.isDestroying || this.isDestroyed) {
-        return;
-      }
-
-      const $topic = $(this.element);
-      $topic
-        .addClass("highlighted")
-        .attr("data-islastviewedtopic", opts.isLastViewedTopic);
-
-      $topic.on("animationend", () => $topic.removeClass("highlighted"));
-    });
-  },
-
-  _highlightIfNeeded: on("didInsertElement", function () {
-    // highlight the last topic viewed
-    if (this.session.get("lastTopicIdViewed") === this.topic.id) {
-      this.session.set("lastTopicIdViewed", null);
-      this.highlight({ isLastViewedTopic: true });
-    } else if (this.topic.highlight) {
-      // highlight new topics that have been loaded from the server or the one we just created
-      this.set("topic.highlight", false);
-      this.highlight();
+    if (this.unhandledRowClick(e, topic) === false) {
+      e.preventDefault();
     }
-  }),
-});
+  }
+
+  unhandledRowClick() {}
+
+  navigateToTopic = navigateToTopic;
+
+  // TODO: Reimplement as modifier... or maybe just with CSS
+  //
+  // highlight(opts = { isLastViewedTopic: false }) {
+  //   schedule("afterRender", () => {
+  //     if (!this.element || this.isDestroying || this.isDestroyed) {
+  //       return;
+  //     }
+
+  //     const $topic = $(this.element);
+  //     $topic
+  //       .addClass("highlighted")
+  //       .attr("data-islastviewedtopic", opts.isLastViewedTopic);
+
+  //     $topic.on("animationend", () => $topic.removeClass("highlighted"));
+  //   });
+  // },
+
+  // _highlightIfNeeded: on("didInsertElement", function () {
+  //   // highlight the last topic viewed
+  //   if (this.session.get("lastTopicIdViewed") === this.topic.id) {
+  //     this.session.set("lastTopicIdViewed", null);
+  //     this.highlight({ isLastViewedTopic: true });
+  //   } else if (this.topic.highlight) {
+  //     // highlight new topics that have been loaded from the server or the one we just created
+  //     this.set("topic.highlight", false);
+  //     this.highlight();
+  //   }
+  // }),
+}
