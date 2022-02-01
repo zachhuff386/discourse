@@ -25,26 +25,23 @@
 
   .panel-body-contents {
     flex-direction: row;
+  }
 
-    .vertical-menu-links {
-      .glyphs-list {
-        display: flex;
-        flex-direction: column;
+  .glyphs-list {
+    display: flex;
+    flex-direction: column;
 
-        button {
-          display: flex;
-          flex: 1 1 auto;
-          padding: 1.3em 1.5em;
-          justify-content: center;
+    button {
+      display: flex;
+      flex: 1 1 auto;
+      padding: 1.3em 1.5em;
+      justify-content: center;
 
-          &:hover,
-          &:focus {
-            background-color: var(--tertiary-low);
-            outline: none;
-            &.active {
-              background-color: var(--tertiary-very-low);
-            }
-          }
+      &:hover,
+      &:focus {
+        background-color: var(--tertiary-low);
+        &.active {
+          background-color: var(--tertiary-very-low);
         }
       }
     }
