@@ -19,6 +19,38 @@
   max-height: 80vh;
 }
 
+.menu-panel.drop-down.revamped-menu {
+  right: 0;
+  padding: 0;
+
+  .panel-body-contents {
+    flex-direction: row;
+
+    .vertical-menu-links {
+      .glyphs-list {
+        display: flex;
+        flex-direction: column;
+
+        button {
+          display: flex;
+          flex: 1 1 auto;
+          padding: 1.3em 1.5em;
+          justify-content: center;
+
+          &:hover,
+          &:focus {
+            background-color: var(--tertiary-low);
+            outline: none;
+            &.active {
+              background-color: var(--tertiary-very-low);
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
 .menu-panel {
   border: 1px solid var(--primary-low);
   box-shadow: shadow("menu-panel");

@@ -48,4 +48,11 @@ createWidget("menu-panel", {
       return { "data-max-width": attrs.maxWidth };
     }
   },
+
+  buildClasses() {
+    if (this.siteSettings.enable_revamped_notifications_menu) {
+      return ["revamped-menu"];
+    }
+    return [];
+  },
 });

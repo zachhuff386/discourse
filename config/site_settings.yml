@@ -1944,6 +1944,10 @@ developer:
   enable_safe_mode:
     default: true
     client: true
+  enable_revamped_notifications_menu:
+    default: false
+    client: true
+    hidden: true
 
 embedding:
   embed_by_username:

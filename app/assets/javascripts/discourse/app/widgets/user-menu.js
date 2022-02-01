@@ -197,6 +197,175 @@ createWidget("user-menu-links", {
   },
 });
 
+createWidget("vertical-user-menu-links", {
+  tagName: "div.vertical-menu-links",
+
+  _tabAttrs(quickAccessType) {
+    return {
+      "aria-controls": `quick-access-${quickAccessType}`,
+      "aria-selected": "false",
+      tabindex: "-1",
+    };
+  },
+
+  // TODO: Remove when 2.7 gets released.
+  _structureAsTab(extraGlyph) {
+    const glyph = extraGlyph;
+    // Assume glyph is a button if it has a data-url field.
+    if (!glyph.data || !glyph.data.url) {
+      glyph.title = glyph.label;
+      glyph.data = { url: glyph.href };
+
+      glyph.label = null;
+      glyph.href = null;
+    }
+
+    if (glyph.className) {
+      glyph.className += " menu-link";
+    } else {
+      glyph.className = "menu-link";
+    }
+
+    glyph.role = "tab";
+    glyph.tabAttrs = this._tabAttrs(glyph.actionParam);
+
+    return glyph;
+  },
+
+  profileGlyph() {
+    return {
+      title: Titles["profile"],
+      className: "user-preferences-link menu-link",
+      id: QuickAccess.PROFILE,
+      icon: "user",
+      action: UserMenuAction.QUICK_ACCESS,
+      actionParam: QuickAccess.PROFILE,
+      data: { url: `${this.attrs.path}/summary` },
+      role: "tab",
+      tabAttrs: this._tabAttrs(QuickAccess.PROFILE),
+    };
+  },
+
+  notificationsGlyph() {
+    return {
+      title: Titles["notifications"],
+      className: "user-notifications-link menu-link",
+      id: QuickAccess.NOTIFICATIONS,
+      icon: "bell",
+      action: UserMenuAction.QUICK_ACCESS,
+      actionParam: QuickAccess.NOTIFICATIONS,
+      data: { url: `${this.attrs.path}/notifications` },
+      role: "tab",
+      tabAttrs: this._tabAttrs(QuickAccess.NOTIFICATIONS),
+    };
+  },
+
+  bookmarksGlyph() {
+    return {
+      title: Titles["bookmarks"],
+      action: UserMenuAction.QUICK_ACCESS,
+      actionParam: QuickAccess.BOOKMARKS,
+      className: "user-bookmarks-link menu-link",
+      id: QuickAccess.BOOKMARKS,
+      icon: "bookmark",
+      data: { url: `${this.attrs.path}/activity/bookmarks` },
+      "aria-label": "user.bookmarks",
+      role: "tab",
+      tabAttrs: this._tabAttrs(QuickAccess.BOOKMARKS),
+    };
+  },
+
+  messagesGlyph() {
+    return {
+      title: Titles["messages"],
+      action: UserMenuAction.QUICK_ACCESS,
+      actionParam: QuickAccess.MESSAGES,
+      className: "user-pms-link menu-link",
+      id: QuickAccess.MESSAGES,
+      icon: "envelope",
+      data: { url: `${this.attrs.path}/messages` },
+      role: "tab",
+      tabAttrs: this._tabAttrs(QuickAccess.MESSAGES),
+    };
+  },
+
+  linkHtml(link) {
+    if (this.isActive(link)) {
+      link = this.markAsActive(link);
+    }
+    return this.attach("link", link);
+  },
+
+  glyphHtml(glyph, idx) {
+    if (this.isActive(glyph)) {
+      glyph = this.markAsActive(glyph);
+    }
+    glyph.data["tab-number"] = `${idx}`;
+
+    return this.attach("flat-button", glyph);
+  },
+
+  html() {
+    const glyphs = [this.notificationsGlyph()];
+
+    if (extraGlyphs) {
+      extraGlyphs.forEach((g) => {
+        if (typeof g === "function") {
+          g = g(this);
+        }
+        if (g) {
+          const structuredGlyph = this._structureAsTab(g);
+          Titles[structuredGlyph.actionParam] =
+            structuredGlyph.title || structuredGlyph.label;
+          glyphs.push(structuredGlyph);
+        }
+      });
+    }
+
+    glyphs.push(this.bookmarksGlyph());
+
+    if (this.siteSettings.enable_personal_messages || this.currentUser.staff) {
+      glyphs.push(this.messagesGlyph());
+    }
+
+    glyphs.push(this.profileGlyph());
+
+    return [
+      h(
+        "div.glyphs-list",
+        { attributes: { "aria-label": "Menu links", role: "tablist" } },
+        glyphs.map((l, index) => this.glyphHtml(l, index))
+      ),
+    ];
+  },
+
+  markAsActive(definition) {
+    // Clicking on an active quick access tab icon should redirect the user to
+    // the full page.
+    definition.action = null;
+    definition.actionParam = null;
+    definition.url = definition.data.url;
+
+    if (definition.className) {
+      definition.className += " active";
+    } else {
+      definition.className = "active";
+    }
+
+    definition.tabAttrs["tabindex"] = "0";
+    definition.tabAttrs["aria-selected"] = "true";
+
+    return definition;
+  },
+
+  isActive({ action, actionParam }) {
+    return (
+      action === UserMenuAction.QUICK_ACCESS &&
+      actionParam === this.attrs.currentQuickAccess
+    );
+  },
+});
+
 export default createWidget("user-menu", {
   tagName: "div.user-menu",
   buildKey: () => "user-menu",
@@ -238,13 +407,24 @@ export default createWidget("user-menu", {
     const path = this.currentUser.get("path");
     const { currentQuickAccess, titleKey } = this.state;
 
-    const result = [
-      this.attach("user-menu-links", {
-        path,
-        currentQuickAccess,
-      }),
-      this.quickAccessPanel(path, titleKey, currentQuickAccess),
-    ];
+    let result = [];
+    if (this.siteSettings.enable_revamped_notifications_menu) {
+      result.push(
+        this.quickAccessPanel(path, titleKey, currentQuickAccess),
+        this.attach("vertical-user-menu-links", {
+          path,
+          currentQuickAccess,
+        })
+      );
+    } else {
+      result.push(
+        this.attach("user-menu-links", {
+          path,
+          currentQuickAccess,
+        }),
+        this.quickAccessPanel(path, titleKey, currentQuickAccess)
+      );
+    }
 
     return result;
   },
