@@ -409,11 +409,13 @@ export default createWidget("user-menu", {
 
     let result = [];
     if (this.siteSettings.enable_revamped_notifications_menu) {
+      const { unreadCountsByType } = this.state;
       result.push(
         this.quickAccessPanel(path, titleKey, currentQuickAccess),
         this.attach("vertical-user-menu-links", {
           path,
           currentQuickAccess,
+          unreadCountsByType,
         })
       );
     } else {
@@ -449,10 +451,15 @@ export default createWidget("user-menu", {
     this.state.markRead = markRead;
   },
 
+  updateUnreadCountsByType(data) {
+    this.state.unreadCountsByType = data;
+  },
+
   html() {
     return this.attach("menu-panel", {
       maxWidth: this.settings.maxWidth,
       contents: () => this.panelContents(),
+      type: "avatar-menu",
     });
   },
 

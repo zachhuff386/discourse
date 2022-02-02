@@ -34,8 +34,27 @@ class NotificationsController < ApplicationController
       user.reload
       user.publish_notifications_state if changed
 
-      render_json_dump(notifications: serialize_data(notifications, NotificationSerializer),
-                       seen_notification_id: current_user.seen_notification_id)
+      data = {
+        notifications: serialize_data(notifications, NotificationSerializer),
+        seen_notification_id: current_user.seen_notification_id
+      }
+      if SiteSetting.enable_revamped_notifications_menu
+        unread_counts_by_type = Notification
+          .visible
+          .recent(500)
+          .where(read: false, user: current_user)
+          .pluck(:notification_type)
+          .tally
+        render_json_dump(
+          data,
+          rest_serializer: true,
+          extras: {
+            unread_counts_by_type: unread_counts_by_type
+          }
+        )
+      else
+        render_json_dump(data)
+      end
     else
       offset = params[:offset].to_i
 

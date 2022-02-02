@@ -83,4 +83,14 @@ createWidgetFrom(QuickAccessPanel, "quick-access-notifications", {
       { cacheKey: "recent-notifications" }
     );
   },
+
+  setItems(newItems) {
+    if (this.siteSettings.enable_revamped_notifications_menu) {
+      this.sendWidgetAction(
+        "updateUnreadCountsByType",
+        newItems.extras.unread_counts_by_type
+      );
+    }
+    this.defaultSetItems(newItems);
+  },
 });

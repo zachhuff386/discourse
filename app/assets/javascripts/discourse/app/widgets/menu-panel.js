@@ -50,7 +50,10 @@ createWidget("menu-panel", {
   },
 
   buildClasses() {
-    if (this.siteSettings.enable_revamped_notifications_menu) {
+    if (
+      this.siteSettings.enable_revamped_notifications_menu &&
+      this.attrs.type === "avatar-menu"
+    ) {
       return ["revamped-menu"];
     }
     return [];
