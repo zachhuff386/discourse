@@ -208,8 +208,8 @@ createWidgetFrom(ButtonWidget, "avatar-menu-button", {
   },
 });
 
-createWidget("vertical-user-menu-links", {
-  tagName: "div.vertical-menu-links",
+createWidget("user-menu-vertical-buttons-container", {
+  tagName: "div.vertical-buttons-container",
 
   _tabAttrs(quickAccessType) {
     return {
@@ -243,62 +243,62 @@ createWidget("vertical-user-menu-links", {
     return glyph;
   },
 
-  profileGlyph() {
-    return {
-      title: Titles["profile"],
-      className: "user-preferences-link menu-link",
-      id: QuickAccess.PROFILE,
-      icon: "user",
-      action: UserMenuAction.QUICK_ACCESS,
-      actionParam: QuickAccess.PROFILE,
-      data: { url: `${this.attrs.path}/summary` },
-      role: "tab",
-      tabAttrs: this._tabAttrs(QuickAccess.PROFILE),
-    };
-  },
+  // profileGlyph() {
+  //   return {
+  //     title: Titles["profile"],
+  //     className: "user-preferences-link menu-link",
+  //     id: QuickAccess.PROFILE,
+  //     icon: "user",
+  //     action: UserMenuAction.QUICK_ACCESS,
+  //     actionParam: QuickAccess.PROFILE,
+  //     data: { url: `${this.attrs.path}/summary` },
+  //     role: "tab",
+  //     tabAttrs: this._tabAttrs(QuickAccess.PROFILE),
+  //   };
+  // },
 
-  notificationsGlyph() {
-    return {
-      title: Titles["notifications"],
-      className: "user-notifications-link menu-link",
-      id: QuickAccess.NOTIFICATIONS,
-      icon: "bell",
-      action: UserMenuAction.QUICK_ACCESS,
-      actionParam: QuickAccess.NOTIFICATIONS,
-      data: { url: `${this.attrs.path}/notifications` },
-      role: "tab",
-      tabAttrs: this._tabAttrs(QuickAccess.NOTIFICATIONS),
-    };
-  },
+  // notificationsGlyph() {
+  //   return {
+  //     title: Titles["notifications"],
+  //     className: "user-notifications-link menu-link",
+  //     id: QuickAccess.NOTIFICATIONS,
+  //     icon: "bell",
+  //     action: UserMenuAction.QUICK_ACCESS,
+  //     actionParam: QuickAccess.NOTIFICATIONS,
+  //     data: { url: `${this.attrs.path}/notifications` },
+  //     role: "tab",
+  //     tabAttrs: this._tabAttrs(QuickAccess.NOTIFICATIONS),
+  //   };
+  // },
 
-  bookmarksGlyph() {
-    return {
-      title: Titles["bookmarks"],
-      action: UserMenuAction.QUICK_ACCESS,
-      actionParam: QuickAccess.BOOKMARKS,
-      className: "user-bookmarks-link menu-link",
-      id: QuickAccess.BOOKMARKS,
-      icon: "bookmark",
-      data: { url: `${this.attrs.path}/activity/bookmarks` },
-      "aria-label": "user.bookmarks",
-      role: "tab",
-      tabAttrs: this._tabAttrs(QuickAccess.BOOKMARKS),
-    };
-  },
+  // bookmarksGlyph() {
+  //   return {
+  //     title: Titles["bookmarks"],
+  //     action: UserMenuAction.QUICK_ACCESS,
+  //     actionParam: QuickAccess.BOOKMARKS,
+  //     className: "user-bookmarks-link menu-link",
+  //     id: QuickAccess.BOOKMARKS,
+  //     icon: "bookmark",
+  //     data: { url: `${this.attrs.path}/activity/bookmarks` },
+  //     "aria-label": "user.bookmarks",
+  //     role: "tab",
+  //     tabAttrs: this._tabAttrs(QuickAccess.BOOKMARKS),
+  //   };
+  // },
 
-  messagesGlyph() {
-    return {
-      title: Titles["messages"],
-      action: UserMenuAction.QUICK_ACCESS,
-      actionParam: QuickAccess.MESSAGES,
-      className: "user-pms-link menu-link",
-      id: QuickAccess.MESSAGES,
-      icon: "envelope",
-      data: { url: `${this.attrs.path}/messages` },
-      role: "tab",
-      tabAttrs: this._tabAttrs(QuickAccess.MESSAGES),
-    };
-  },
+  // messagesGlyph() {
+  //   return {
+  //     title: Titles["messages"],
+  //     action: UserMenuAction.QUICK_ACCESS,
+  //     actionParam: QuickAccess.MESSAGES,
+  //     className: "user-pms-link menu-link",
+  //     id: QuickAccess.MESSAGES,
+  //     icon: "envelope",
+  //     data: { url: `${this.attrs.path}/messages` },
+  //     role: "tab",
+  //     tabAttrs: this._tabAttrs(QuickAccess.MESSAGES),
+  //   };
+  // },
 
   linkHtml(link) {
     if (this.isActive(link)) {
@@ -315,40 +315,15 @@ createWidget("vertical-user-menu-links", {
       glyph.data = {};
     }
     glyph.data["tab-number"] = `${idx}`;
+    if (glyph.notificationType && this.attrs.unreadCountsByType) {
+      glyph.count = this.attrs.unreadCountsByType[glyph.notificationType] || 0;
+      delete glyph.notificationType;
+    }
 
     return this.attach("avatar-menu-button", glyph);
   },
 
-  repliesNotifications() {
-    let count = 0;
-    if (this.attrs.unreadCountsByType) {
-      count =
-        this.attrs.unreadCountsByType[this.site.notification_types.replied] ||
-        0;
-    }
-    return {
-      icon: "reply",
-      tabAttrs: this._tabAttrs(QuickAccess.NOTIFICATIONS),
-      id: QuickAccess.NOTIFICATIONS,
-      role: "tab",
-      title: Titles["notifications"],
-      count,
-    };
-  },
-
-  allNotifications() {
-    // return {
-    //   title: Titles["notifications"],
-    //   className: "user-notifications-link menu-link",
-    //   id: QuickAccess.NOTIFICATIONS,
-    //   icon: "bell",
-    //   action: UserMenuAction.QUICK_ACCESS,
-    //   actionParam: QuickAccess.NOTIFICATIONS,
-    //   data: { url: `${this.attrs.path}/notifications` },
-    //   role: "tab",
-    //   tabAttrs: this._tabAttrs(QuickAccess.NOTIFICATIONS),
-    // };
-    console.log(this.attrs.unreadCountsByType);
+  allNotificationsButton() {
     return {
       icon: "bell",
       tabAttrs: this._tabAttrs(QuickAccess.NOTIFICATIONS),
@@ -358,37 +333,79 @@ createWidget("vertical-user-menu-links", {
     };
   },
 
+  repliedButton() {
+    return {
+      icon: "reply",
+      tabAttrs: this._tabAttrs(QuickAccess.NOTIFICATIONS),
+      id: QuickAccess.NOTIFICATIONS,
+      role: "tab",
+      title: Titles["notifications"],
+      notificationType: this.site.notification_types.replied,
+    };
+  },
+
+  mentionedButton() {
+    return {
+      icon: "at",
+      tabAttrs: this._tabAttrs(QuickAccess.NOTIFICATIONS),
+      id: QuickAccess.NOTIFICATIONS,
+      role: "tab",
+      title: Titles["notifications"],
+      notificationType: this.site.notification_types.mentioned,
+    };
+  },
+
+  likedButton() {
+    return {
+      icon: "heart",
+      tabAttrs: this._tabAttrs(QuickAccess.NOTIFICATIONS),
+      id: QuickAccess.NOTIFICATIONS,
+      role: "tab",
+      title: Titles["notifications"],
+      notificationType: this.site.notification_types.liked,
+    };
+  },
+
+  pmButton() {
+    return {
+      icon: "far-envelope",
+      tabAttrs: this._tabAttrs(QuickAccess.NOTIFICATIONS),
+      id: QuickAccess.NOTIFICATIONS,
+      role: "tab",
+      title: Titles["notifications"],
+      notificationType: this.site.notification_types.private_message,
+    };
+  },
+
+  preferencesButton() {
+    return this.attach("avatar-menu-button", {
+      icon: "user-cog",
+      tabAttrs: this._tabAttrs(QuickAccess.NOTIFICATIONS),
+      id: QuickAccess.NOTIFICATIONS,
+      role: "tab",
+      title: Titles["notifications"],
+    });
+  },
+
   html() {
-    const glyphs = [this.allNotifications(), this.repliesNotifications()];
+    const topButtons = [
+      this.allNotificationsButton(),
+      this.repliedButton(),
+      this.mentionedButton(),
+      this.likedButton(),
+      this.pmButton(),
+    ];
 
-    // if (extraGlyphs) {
-    //   extraGlyphs.forEach((g) => {
-    //     if (typeof g === "function") {
-    //       g = g(this);
-    //     }
-    //     if (g) {
-    //       const structuredGlyph = this._structureAsTab(g);
-    //       Titles[structuredGlyph.actionParam] =
-    //         structuredGlyph.title || structuredGlyph.label;
-    //       glyphs.push(structuredGlyph);
-    //     }
-    //   });
-    // }
-
-    // glyphs.push(this.bookmarksGlyph());
-
-    // if (this.siteSettings.enable_personal_messages || this.currentUser.staff) {
-    //   glyphs.push(this.messagesGlyph());
-    // }
-
-    // glyphs.push(this.profileGlyph());
-
-    console.log(glyphs[0], this.glyphHtml(glyphs[0]));
     return [
       h(
-        "div.glyphs-list",
+        "div.top-list",
         { attributes: { "aria-label": "Menu links", role: "tablist" } },
-        glyphs.map((l, index) => this.glyphHtml(l, index))
+        topButtons.map((l, index) => this.glyphHtml(l, index))
+      ),
+      h(
+        "div.bottom-list",
+        { attributes: { "aria-label": "Menu links", role: "tablist" } },
+        [this.preferencesButton()]
       ),
     ];
   },
@@ -466,7 +483,7 @@ export default createWidget("user-menu", {
       const { unreadCountsByType } = this.state;
       result.push(
         this.quickAccessPanel(path, titleKey, currentQuickAccess),
-        this.attach("vertical-user-menu-links", {
+        this.attach("user-menu-vertical-buttons-container", {
           path,
           currentQuickAccess,
           unreadCountsByType,
