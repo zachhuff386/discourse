@@ -36,6 +36,7 @@
       flex: 1 1 auto;
       padding: 1.3em 1.5em;
       justify-content: center;
+      position: relative;
 
       &:hover,
       &:focus {
@@ -43,6 +44,17 @@
         &.active {
           background-color: var(--tertiary-very-low);
         }
+      }
+
+      .badge-notification {
+        background-color: var(--tertiary-med-or-tertiary);
+        color: var(--secondary);
+        // font-size: var(--font-down-3);
+        position: absolute;
+        right: 12px;
+        top: 10px;
+        display: flex;
+        justify-content: center;
       }
     }
   }

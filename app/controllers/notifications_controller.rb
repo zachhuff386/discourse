@@ -41,8 +41,10 @@ class NotificationsController < ApplicationController
       if SiteSetting.enable_revamped_notifications_menu
         unread_counts_by_type = Notification
           .visible
-          .recent(500)
-          .where(read: false, user: current_user)
+          .recent(100)
+          # .recent(500)
+          # .where(read: false, user: current_user)
+          .where(user: current_user)
           .pluck(:notification_type)
           .tally
         render_json_dump(

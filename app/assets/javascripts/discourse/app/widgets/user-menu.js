@@ -1,7 +1,8 @@
 import { later } from "@ember/runloop";
-import { createWidget } from "discourse/widgets/widget";
+import { createWidget, createWidgetFrom } from "discourse/widgets/widget";
 import { h } from "virtual-dom";
 import showModal from "discourse/lib/show-modal";
+import ButtonWidget from "discourse/widgets/button";
 
 const UserMenuAction = {
   QUICK_ACCESS: "quickAccess",
@@ -197,6 +198,16 @@ createWidget("user-menu-links", {
   },
 });
 
+createWidgetFrom(ButtonWidget, "avatar-menu-button", {
+  tagName: "button.btn-flat.avatar-menu-button",
+
+  additionalContent() {
+    if (this.attrs.count) {
+      return [h("span.badge-notification", this.attrs.count.toString())];
+    }
+  },
+});
+
 createWidget("vertical-user-menu-links", {
   tagName: "div.vertical-menu-links",
 
@@ -300,36 +311,79 @@ createWidget("vertical-user-menu-links", {
     if (this.isActive(glyph)) {
       glyph = this.markAsActive(glyph);
     }
+    if (!glyph.data) {
+      glyph.data = {};
+    }
     glyph.data["tab-number"] = `${idx}`;
 
-    return this.attach("flat-button", glyph);
+    return this.attach("avatar-menu-button", glyph);
+  },
+
+  repliesNotifications() {
+    let count = 0;
+    if (this.attrs.unreadCountsByType) {
+      count =
+        this.attrs.unreadCountsByType[this.site.notification_types.replied] ||
+        0;
+    }
+    return {
+      icon: "reply",
+      tabAttrs: this._tabAttrs(QuickAccess.NOTIFICATIONS),
+      id: QuickAccess.NOTIFICATIONS,
+      role: "tab",
+      title: Titles["notifications"],
+      count,
+    };
+  },
+
+  allNotifications() {
+    // return {
+    //   title: Titles["notifications"],
+    //   className: "user-notifications-link menu-link",
+    //   id: QuickAccess.NOTIFICATIONS,
+    //   icon: "bell",
+    //   action: UserMenuAction.QUICK_ACCESS,
+    //   actionParam: QuickAccess.NOTIFICATIONS,
+    //   data: { url: `${this.attrs.path}/notifications` },
+    //   role: "tab",
+    //   tabAttrs: this._tabAttrs(QuickAccess.NOTIFICATIONS),
+    // };
+    console.log(this.attrs.unreadCountsByType);
+    return {
+      icon: "bell",
+      tabAttrs: this._tabAttrs(QuickAccess.NOTIFICATIONS),
+      id: QuickAccess.NOTIFICATIONS,
+      role: "tab",
+      title: Titles["notifications"],
+    };
   },
 
   html() {
-    const glyphs = [this.notificationsGlyph()];
+    const glyphs = [this.allNotifications(), this.repliesNotifications()];
 
-    if (extraGlyphs) {
-      extraGlyphs.forEach((g) => {
-        if (typeof g === "function") {
-          g = g(this);
-        }
-        if (g) {
-          const structuredGlyph = this._structureAsTab(g);
-          Titles[structuredGlyph.actionParam] =
-            structuredGlyph.title || structuredGlyph.label;
-          glyphs.push(structuredGlyph);
-        }
-      });
-    }
+    // if (extraGlyphs) {
+    //   extraGlyphs.forEach((g) => {
+    //     if (typeof g === "function") {
+    //       g = g(this);
+    //     }
+    //     if (g) {
+    //       const structuredGlyph = this._structureAsTab(g);
+    //       Titles[structuredGlyph.actionParam] =
+    //         structuredGlyph.title || structuredGlyph.label;
+    //       glyphs.push(structuredGlyph);
+    //     }
+    //   });
+    // }
 
-    glyphs.push(this.bookmarksGlyph());
+    // glyphs.push(this.bookmarksGlyph());
 
-    if (this.siteSettings.enable_personal_messages || this.currentUser.staff) {
-      glyphs.push(this.messagesGlyph());
-    }
+    // if (this.siteSettings.enable_personal_messages || this.currentUser.staff) {
+    //   glyphs.push(this.messagesGlyph());
+    // }
 
-    glyphs.push(this.profileGlyph());
+    // glyphs.push(this.profileGlyph());
 
+    console.log(glyphs[0], this.glyphHtml(glyphs[0]));
     return [
       h(
         "div.glyphs-list",

@@ -75,6 +75,8 @@ export const ButtonClass = {
     return icon;
   },
 
+  additionalContent() {},
+
   html(attrs) {
     const contents = [];
     const left = !attrs.iconRight;
@@ -102,6 +104,10 @@ export const ButtonClass = {
       contents.push(this._buildIcon(attrs));
     }
 
+    const additionalContent = this.additionalContent();
+    if (additionalContent?.length) {
+      contents.push(...additionalContent);
+    }
     return contents;
   },
 
