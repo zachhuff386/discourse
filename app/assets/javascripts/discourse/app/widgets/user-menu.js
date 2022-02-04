@@ -442,7 +442,7 @@ export default createWidget("user-menu", {
   buildKey: () => "user-menu",
 
   settings: {
-    maxWidth: 320,
+    maxWidth: 380,
     showLogoutButton: true,
   },
 

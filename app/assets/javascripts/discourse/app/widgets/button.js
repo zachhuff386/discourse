@@ -117,7 +117,7 @@ export const ButtonClass = {
       return;
     }
 
-    $(`button.widget-button`).removeClass("d-hover").blur();
+    $("button.widget-button").removeClass("d-hover").blur();
     if (attrs.secondaryAction) {
       this.sendWidgetAction(attrs.secondaryAction);
     }
