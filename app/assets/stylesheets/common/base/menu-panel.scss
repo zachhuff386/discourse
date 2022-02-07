@@ -22,15 +22,13 @@
 .menu-panel.drop-down.revamped-menu {
   right: 0;
   padding: 0;
-  width: unset;
 
   .panel-body-contents {
     flex-direction: row;
   }
 
   .quick-access-panel {
-    padding: 0.5em 0.5em 0.5em 0.5em;
-    width: 320px;
+    padding: 0.75em 0.75em 0.75em 0.75em;
   }
 
   .vertical-buttons-container {
@@ -47,7 +45,7 @@
     button {
       display: flex;
       flex: 1 1 auto;
-      padding: 1.1em 1.3em;
+      padding: 1.3em 1.5em;
       justify-content: center;
       position: relative;
 
@@ -62,10 +60,10 @@
       .badge-notification {
         background-color: var(--tertiary-med-or-tertiary);
         color: var(--secondary);
-        font-size: var(--font-down-3);
+        // font-size: var(--font-down-3);
         position: absolute;
-        right: 10px;
-        top: 5px;
+        right: 12px;
+        top: 10px;
         display: flex;
         justify-content: center;
       }
