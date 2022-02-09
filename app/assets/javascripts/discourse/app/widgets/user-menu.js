@@ -208,8 +208,8 @@ createWidgetFrom(ButtonWidget, "avatar-menu-button", {
   },
 });
 
-createWidget("user-menu-vertical-buttons-container", {
-  tagName: "div.vertical-buttons-container",
+createWidget("user-menu-side-tabs-container", {
+  tagName: "div.side-tabs-container",
 
   _tabAttrs(quickAccessType) {
     return {
@@ -323,7 +323,7 @@ createWidget("user-menu-vertical-buttons-container", {
     return this.attach("avatar-menu-button", glyph);
   },
 
-  allNotificationsButton() {
+  allNotificationsTab() {
     return {
       icon: "bell",
       tabAttrs: this._tabAttrs(QuickAccess.NOTIFICATIONS),
@@ -333,7 +333,7 @@ createWidget("user-menu-vertical-buttons-container", {
     };
   },
 
-  repliedButton() {
+  repliedTab() {
     return {
       icon: "reply",
       tabAttrs: this._tabAttrs(QuickAccess.NOTIFICATIONS),
@@ -344,7 +344,7 @@ createWidget("user-menu-vertical-buttons-container", {
     };
   },
 
-  mentionedButton() {
+  mentionedTab() {
     return {
       icon: "at",
       tabAttrs: this._tabAttrs(QuickAccess.NOTIFICATIONS),
@@ -355,7 +355,7 @@ createWidget("user-menu-vertical-buttons-container", {
     };
   },
 
-  likedButton() {
+  likedTab() {
     return {
       icon: "heart",
       tabAttrs: this._tabAttrs(QuickAccess.NOTIFICATIONS),
@@ -366,7 +366,7 @@ createWidget("user-menu-vertical-buttons-container", {
     };
   },
 
-  pmButton() {
+  pmsTabs() {
     return {
       icon: "far-envelope",
       tabAttrs: this._tabAttrs(QuickAccess.NOTIFICATIONS),
@@ -377,7 +377,7 @@ createWidget("user-menu-vertical-buttons-container", {
     };
   },
 
-  preferencesButton() {
+  preferencesTab() {
     return this.attach("avatar-menu-button", {
       icon: "user-cog",
       tabAttrs: this._tabAttrs(QuickAccess.NOTIFICATIONS),
@@ -389,11 +389,11 @@ createWidget("user-menu-vertical-buttons-container", {
 
   html() {
     const topButtons = [
-      this.allNotificationsButton(),
-      this.repliedButton(),
-      this.mentionedButton(),
-      this.likedButton(),
-      this.pmButton(),
+      this.allNotificationsTab(),
+      this.repliedTab(),
+      this.mentionedTab(),
+      this.likedTab(),
+      this.pmsTabs(),
     ];
 
     return [
@@ -405,7 +405,7 @@ createWidget("user-menu-vertical-buttons-container", {
       h(
         "div.bottom-list",
         { attributes: { "aria-label": "Menu links", role: "tablist" } },
-        [this.preferencesButton()]
+        [this.preferencesTab()]
       ),
     ];
   },
@@ -480,13 +480,11 @@ export default createWidget("user-menu", {
 
     let result = [];
     if (this.siteSettings.enable_revamped_notifications_menu) {
-      const { unreadCountsByType } = this.state;
       result.push(
         this.quickAccessPanel(path, titleKey, currentQuickAccess),
-        this.attach("user-menu-vertical-buttons-container", {
+        this.attach("user-menu-side-tabs-container", {
           path,
           currentQuickAccess,
-          unreadCountsByType,
         })
       );
     } else {
@@ -520,10 +518,6 @@ export default createWidget("user-menu", {
   itemsLoaded({ hasUnread, markRead }) {
     this.state.hasUnread = hasUnread;
     this.state.markRead = markRead;
-  },
-
-  updateUnreadCountsByType(data) {
-    this.state.unreadCountsByType = data;
   },
 
   html() {

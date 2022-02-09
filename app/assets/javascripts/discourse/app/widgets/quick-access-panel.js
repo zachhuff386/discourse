@@ -155,11 +155,7 @@ export default createWidget("quick-access-panel", {
     return Session.currentProp(`${this.key}-items`) || [];
   },
 
-  defaultSetItems(newItems) {
-    Session.currentProp(`${this.key}-items`, newItems);
-  },
-
   setItems(newItems) {
-    defaultSetItems(newItems);
+    Session.currentProp(`${this.key}-items`, newItems);
   },
 });
