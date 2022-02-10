@@ -2,6 +2,7 @@
 
 require_relative "base"
 require "sqlite3"
+require "json"
 
 class BulkImport::Generic < BulkImport::Base
   AVATAR_DIRECTORY = ENV["AVATAR_DIRECTORY"]
@@ -28,6 +29,7 @@ class BulkImport::Generic < BulkImport::Base
     import_single_sign_on_records
     import_topics
     import_posts
+    import_topic_allowed_users
     import_likes
   end
 
@@ -137,12 +139,34 @@ class BulkImport::Generic < BulkImport::Base
 
     create_topics(topics) do |row|
       {
+        archetype: row["private_message"] ? Archetype.private_message: Archetype.default
         imported_id: row["id"],
         title: row["title"],
         user_id: user_id_from_imported_id(row["user_id"]),
         created_at: to_datetime(row["created_at"]),
         category_id: category_id_from_imported_id(row["category_id"]),
         closed: to_boolean(row["closed"])
+      }
+    end
+  end
+
+  def import_topic_allowed_users
+    puts "", "importing topic_allowed_users..."
+
+    topics = @db.execute(<<~SQL)
+      SELECT ROWID, *
+      FROM topics
+      WHERE private_message IS NOT NULL
+      ORDER BY ROWID
+    SQL
+
+    create_topic_allowed_users(topics) do |row|
+      next unless topic_id = topic_id_from_imported_id(row["topic_id"])
+      imported_user_id = JSON.parse(row["private_message"])["user_ids"][0]
+      user_id = user_id_from_imported_id(imported_user_id)
+      {
+        topic_id: topic_id,
+        user_id: user_id,
       }
     end
   end
