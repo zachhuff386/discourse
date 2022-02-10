@@ -139,7 +139,7 @@ class BulkImport::Generic < BulkImport::Base
 
     create_topics(topics) do |row|
       {
-        archetype: row["private_message"] ? Archetype.private_message: Archetype.default
+        archetype: row["private_message"] ? Archetype.private_message: Archetype.default,
         imported_id: row["id"],
         title: row["title"],
         user_id: user_id_from_imported_id(row["user_id"]),
@@ -164,11 +164,14 @@ class BulkImport::Generic < BulkImport::Base
       next unless topic_id = topic_id_from_imported_id(row["topic_id"])
       imported_user_id = JSON.parse(row["private_message"])["user_ids"][0]
       user_id = user_id_from_imported_id(imported_user_id)
+      added += 1
       {
         topic_id: topic_id,
-        user_id: user_id,
+        user_id: user_id
       }
     end
+
+    puts '', "Added #{added} topic_allowed_users records."
   end
 
   def import_posts
