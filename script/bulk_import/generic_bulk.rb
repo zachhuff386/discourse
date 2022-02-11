@@ -26,7 +26,7 @@ class BulkImport::Generic < BulkImport::Base
     import_categories
     import_users
     import_user_emails
-    import_single_sign_on_records
+    #import_single_sign_on_records
     import_topics
     import_posts
     import_topic_allowed_users
@@ -163,7 +163,7 @@ class BulkImport::Generic < BulkImport::Base
     SQL
 
     create_topic_allowed_users(topics) do |row|
-      next unless topic_id = topic_id_from_imported_id(row["topic_id"])
+      next unless topic_id = topic_id_from_imported_id(row["id"])
       imported_user_id = JSON.parse(row["private_message"])["user_ids"].first
       user_id = user_id_from_imported_id(imported_user_id)
       added += 1
