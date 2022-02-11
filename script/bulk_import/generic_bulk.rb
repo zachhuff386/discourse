@@ -162,6 +162,8 @@ class BulkImport::Generic < BulkImport::Base
       ORDER BY ROWID
     SQL
 
+    added = 0
+
     create_topic_allowed_users(topics) do |row|
       next unless topic_id = topic_id_from_imported_id(row["id"])
       imported_user_id = JSON.parse(row["private_message"])["user_ids"].first
