@@ -29,177 +29,177 @@ export function addUserMenuGlyph(glyph) {
   extraGlyphs.push(glyph);
 }
 
-createWidget("user-menu-links", {
-  tagName: "div.menu-links-header",
+// createWidget("user-menu-links", {
+//   tagName: "div.menu-links-header",
+//
+//   _tabAttrs(quickAccessType) {
+//     return {
+//       "aria-controls": `quick-access-${quickAccessType}`,
+//       "aria-selected": "false",
+//       tabindex: "-1",
+//     };
+//   },
+//
+//   // TODO: Remove when 2.7 gets released.
+//   _structureAsTab(extraGlyph) {
+//     const glyph = extraGlyph;
+//     // Assume glyph is a button if it has a data-url field.
+//     if (!glyph.data || !glyph.data.url) {
+//       glyph.title = glyph.label;
+//       glyph.data = { url: glyph.href };
+//
+//       glyph.label = null;
+//       glyph.href = null;
+//     }
+//
+//     if (glyph.className) {
+//       glyph.className += " menu-link";
+//     } else {
+//       glyph.className = "menu-link";
+//     }
+//
+//     glyph.role = "tab";
+//     glyph.tabAttrs = this._tabAttrs(glyph.actionParam);
+//
+//     return glyph;
+//   },
+//
+//   profileGlyph() {
+//     return {
+//       title: Titles["profile"],
+//       className: "user-preferences-link menu-link",
+//       id: QuickAccess.PROFILE,
+//       icon: "user",
+//       action: UserMenuAction.QUICK_ACCESS,
+//       actionParam: QuickAccess.PROFILE,
+//       data: { url: `${this.attrs.path}/summary` },
+//       role: "tab",
+//       tabAttrs: this._tabAttrs(QuickAccess.PROFILE),
+//     };
+//   },
+//
+//   notificationsGlyph() {
+//     return {
+//       title: Titles["notifications"],
+//       className: "user-notifications-link menu-link",
+//       id: QuickAccess.NOTIFICATIONS,
+//       icon: "bell",
+//       action: UserMenuAction.QUICK_ACCESS,
+//       actionParam: QuickAccess.NOTIFICATIONS,
+//       data: { url: `${this.attrs.path}/notifications` },
+//       role: "tab",
+//       tabAttrs: this._tabAttrs(QuickAccess.NOTIFICATIONS),
+//     };
+//   },
+//
+//   bookmarksGlyph() {
+//     return {
+//       title: Titles["bookmarks"],
+//       action: UserMenuAction.QUICK_ACCESS,
+//       actionParam: QuickAccess.BOOKMARKS,
+//       className: "user-bookmarks-link menu-link",
+//       id: QuickAccess.BOOKMARKS,
+//       icon: "bookmark",
+//       data: { url: `${this.attrs.path}/activity/bookmarks` },
+//       "aria-label": "user.bookmarks",
+//       role: "tab",
+//       tabAttrs: this._tabAttrs(QuickAccess.BOOKMARKS),
+//     };
+//   },
+//
+//   messagesGlyph() {
+//     return {
+//       title: Titles["messages"],
+//       action: UserMenuAction.QUICK_ACCESS,
+//       actionParam: QuickAccess.MESSAGES,
+//       className: "user-pms-link menu-link",
+//       id: QuickAccess.MESSAGES,
+//       icon: "envelope",
+//       data: { url: `${this.attrs.path}/messages` },
+//       role: "tab",
+//       tabAttrs: this._tabAttrs(QuickAccess.MESSAGES),
+//     };
+//   },
+//
+//   linkHtml(link) {
+//     if (this.isActive(link)) {
+//       link = this.markAsActive(link);
+//     }
+//     return this.attach("link", link);
+//   },
+//
+//   glyphHtml(glyph, idx) {
+//     if (this.isActive(glyph)) {
+//       glyph = this.markAsActive(glyph);
+//     }
+//     glyph.data["tab-number"] = `${idx}`;
+//
+//     return this.attach("flat-button", glyph);
+//   },
+//
+//   html() {
+//     const glyphs = [this.notificationsGlyph()];
+//
+//     if (extraGlyphs) {
+//       extraGlyphs.forEach((g) => {
+//         if (typeof g === "function") {
+//           g = g(this);
+//         }
+//         if (g) {
+//           const structuredGlyph = this._structureAsTab(g);
+//           Titles[structuredGlyph.actionParam] =
+//             structuredGlyph.title || structuredGlyph.label;
+//           glyphs.push(structuredGlyph);
+//         }
+//       });
+//     }
+//
+//     glyphs.push(this.bookmarksGlyph());
+//
+//     if (this.siteSettings.enable_personal_messages || this.currentUser.staff) {
+//       glyphs.push(this.messagesGlyph());
+//     }
+//
+//     glyphs.push(this.profileGlyph());
+//
+//     return h("div.menu-links-row", [
+//       h(
+//         "div.glyphs",
+//         { attributes: { "aria-label": "Menu links", role: "tablist" } },
+//         glyphs.map((l, index) => this.glyphHtml(l, index))
+//       ),
+//     ]);
+//   },
+//
+//   markAsActive(definition) {
+//     // Clicking on an active quick access tab icon should redirect the user to
+//     // the full page.
+//     definition.action = null;
+//     definition.actionParam = null;
+//     definition.url = definition.data.url;
+//
+//     if (definition.className) {
+//       definition.className += " active";
+//     } else {
+//       definition.className = "active";
+//     }
+//
+//     definition.tabAttrs["tabindex"] = "0";
+//     definition.tabAttrs["aria-selected"] = "true";
+//
+//     return definition;
+//   },
+//
+//   isActive({ action, actionParam }) {
+//     return (
+//       action === UserMenuAction.QUICK_ACCESS &&
+//       actionParam === this.attrs.currentQuickAccess
+//     );
+//   },
+// });
 
-  _tabAttrs(quickAccessType) {
-    return {
-      "aria-controls": `quick-access-${quickAccessType}`,
-      "aria-selected": "false",
-      tabindex: "-1",
-    };
-  },
-
-  // TODO: Remove when 2.7 gets released.
-  _structureAsTab(extraGlyph) {
-    const glyph = extraGlyph;
-    // Assume glyph is a button if it has a data-url field.
-    if (!glyph.data || !glyph.data.url) {
-      glyph.title = glyph.label;
-      glyph.data = { url: glyph.href };
-
-      glyph.label = null;
-      glyph.href = null;
-    }
-
-    if (glyph.className) {
-      glyph.className += " menu-link";
-    } else {
-      glyph.className = "menu-link";
-    }
-
-    glyph.role = "tab";
-    glyph.tabAttrs = this._tabAttrs(glyph.actionParam);
-
-    return glyph;
-  },
-
-  profileGlyph() {
-    return {
-      title: Titles["profile"],
-      className: "user-preferences-link menu-link",
-      id: QuickAccess.PROFILE,
-      icon: "user",
-      action: UserMenuAction.QUICK_ACCESS,
-      actionParam: QuickAccess.PROFILE,
-      data: { url: `${this.attrs.path}/summary` },
-      role: "tab",
-      tabAttrs: this._tabAttrs(QuickAccess.PROFILE),
-    };
-  },
-
-  notificationsGlyph() {
-    return {
-      title: Titles["notifications"],
-      className: "user-notifications-link menu-link",
-      id: QuickAccess.NOTIFICATIONS,
-      icon: "bell",
-      action: UserMenuAction.QUICK_ACCESS,
-      actionParam: QuickAccess.NOTIFICATIONS,
-      data: { url: `${this.attrs.path}/notifications` },
-      role: "tab",
-      tabAttrs: this._tabAttrs(QuickAccess.NOTIFICATIONS),
-    };
-  },
-
-  bookmarksGlyph() {
-    return {
-      title: Titles["bookmarks"],
-      action: UserMenuAction.QUICK_ACCESS,
-      actionParam: QuickAccess.BOOKMARKS,
-      className: "user-bookmarks-link menu-link",
-      id: QuickAccess.BOOKMARKS,
-      icon: "bookmark",
-      data: { url: `${this.attrs.path}/activity/bookmarks` },
-      "aria-label": "user.bookmarks",
-      role: "tab",
-      tabAttrs: this._tabAttrs(QuickAccess.BOOKMARKS),
-    };
-  },
-
-  messagesGlyph() {
-    return {
-      title: Titles["messages"],
-      action: UserMenuAction.QUICK_ACCESS,
-      actionParam: QuickAccess.MESSAGES,
-      className: "user-pms-link menu-link",
-      id: QuickAccess.MESSAGES,
-      icon: "envelope",
-      data: { url: `${this.attrs.path}/messages` },
-      role: "tab",
-      tabAttrs: this._tabAttrs(QuickAccess.MESSAGES),
-    };
-  },
-
-  linkHtml(link) {
-    if (this.isActive(link)) {
-      link = this.markAsActive(link);
-    }
-    return this.attach("link", link);
-  },
-
-  glyphHtml(glyph, idx) {
-    if (this.isActive(glyph)) {
-      glyph = this.markAsActive(glyph);
-    }
-    glyph.data["tab-number"] = `${idx}`;
-
-    return this.attach("flat-button", glyph);
-  },
-
-  html() {
-    const glyphs = [this.notificationsGlyph()];
-
-    if (extraGlyphs) {
-      extraGlyphs.forEach((g) => {
-        if (typeof g === "function") {
-          g = g(this);
-        }
-        if (g) {
-          const structuredGlyph = this._structureAsTab(g);
-          Titles[structuredGlyph.actionParam] =
-            structuredGlyph.title || structuredGlyph.label;
-          glyphs.push(structuredGlyph);
-        }
-      });
-    }
-
-    glyphs.push(this.bookmarksGlyph());
-
-    if (this.siteSettings.enable_personal_messages || this.currentUser.staff) {
-      glyphs.push(this.messagesGlyph());
-    }
-
-    glyphs.push(this.profileGlyph());
-
-    return h("div.menu-links-row", [
-      h(
-        "div.glyphs",
-        { attributes: { "aria-label": "Menu links", role: "tablist" } },
-        glyphs.map((l, index) => this.glyphHtml(l, index))
-      ),
-    ]);
-  },
-
-  markAsActive(definition) {
-    // Clicking on an active quick access tab icon should redirect the user to
-    // the full page.
-    definition.action = null;
-    definition.actionParam = null;
-    definition.url = definition.data.url;
-
-    if (definition.className) {
-      definition.className += " active";
-    } else {
-      definition.className = "active";
-    }
-
-    definition.tabAttrs["tabindex"] = "0";
-    definition.tabAttrs["aria-selected"] = "true";
-
-    return definition;
-  },
-
-  isActive({ action, actionParam }) {
-    return (
-      action === UserMenuAction.QUICK_ACCESS &&
-      actionParam === this.attrs.currentQuickAccess
-    );
-  },
-});
-
-createWidgetFrom(ButtonWidget, "avatar-menu-button", {
-  tagName: "button.btn-flat.avatar-menu-button",
+createWidgetFrom(ButtonWidget, "avatar-menu-tab", {
+  tagName: "button.btn-flat.avatar-menu-tab",
 
   additionalContent() {
     if (this.attrs.count) {
@@ -219,72 +219,28 @@ createWidget("user-menu-side-tabs-container", {
     };
   },
 
-  // TODO: Remove when 2.7 gets released.
-  _structureAsTab(extraGlyph) {
-    const glyph = extraGlyph;
-    // Assume glyph is a button if it has a data-url field.
-    if (!glyph.data || !glyph.data.url) {
-      glyph.title = glyph.label;
-      glyph.data = { url: glyph.href };
-
-      glyph.label = null;
-      glyph.href = null;
+  linkHtml(link) {
+    if (this.isActive(link)) {
+      link = this.markAsActive(link);
     }
-
-    if (glyph.className) {
-      glyph.className += " menu-link";
-    } else {
-      glyph.className = "menu-link";
-    }
-
-    glyph.role = "tab";
-    glyph.tabAttrs = this._tabAttrs(glyph.actionParam);
-
-    return glyph;
+    return this.attach("link", link);
   },
 
-  // profileGlyph() {
-  //   return {
-  //     title: Titles["profile"],
-  //     className: "user-preferences-link menu-link",
-  //     id: QuickAccess.PROFILE,
-  //     icon: "user",
-  //     action: UserMenuAction.QUICK_ACCESS,
-  //     actionParam: QuickAccess.PROFILE,
-  //     data: { url: `${this.attrs.path}/summary` },
-  //     role: "tab",
-  //     tabAttrs: this._tabAttrs(QuickAccess.PROFILE),
-  //   };
-  // },
+  tabHtml(tab, idx) {
+    if (this.isActive(tab)) {
+      tab = this.markAsActive(tab);
+    }
+    if (!tab.data) {
+      tab.data = {};
+    }
+    tab.data["tab-number"] = `${idx}`;
+    if (tab.notificationType && this.attrs.unreadCountsByType) {
+      tab.count = this.attrs.unreadCountsByType[tab.notificationType] || 0;
+      delete tab.notificationType;
+    }
 
-  // notificationsGlyph() {
-  //   return {
-  //     title: Titles["notifications"],
-  //     className: "user-notifications-link menu-link",
-  //     id: QuickAccess.NOTIFICATIONS,
-  //     icon: "bell",
-  //     action: UserMenuAction.QUICK_ACCESS,
-  //     actionParam: QuickAccess.NOTIFICATIONS,
-  //     data: { url: `${this.attrs.path}/notifications` },
-  //     role: "tab",
-  //     tabAttrs: this._tabAttrs(QuickAccess.NOTIFICATIONS),
-  //   };
-  // },
-
-  // bookmarksGlyph() {
-  //   return {
-  //     title: Titles["bookmarks"],
-  //     action: UserMenuAction.QUICK_ACCESS,
-  //     actionParam: QuickAccess.BOOKMARKS,
-  //     className: "user-bookmarks-link menu-link",
-  //     id: QuickAccess.BOOKMARKS,
-  //     icon: "bookmark",
-  //     data: { url: `${this.attrs.path}/activity/bookmarks` },
-  //     "aria-label": "user.bookmarks",
-  //     role: "tab",
-  //     tabAttrs: this._tabAttrs(QuickAccess.BOOKMARKS),
-  //   };
-  // },
+    return this.attach("avatar-menu-tab", tab);
+  },
 
   // messagesGlyph() {
   //   return {
@@ -300,90 +256,68 @@ createWidget("user-menu-side-tabs-container", {
   //   };
   // },
 
-  linkHtml(link) {
-    if (this.isActive(link)) {
-      link = this.markAsActive(link);
-    }
-    return this.attach("link", link);
-  },
-
-  glyphHtml(glyph, idx) {
-    if (this.isActive(glyph)) {
-      glyph = this.markAsActive(glyph);
-    }
-    if (!glyph.data) {
-      glyph.data = {};
-    }
-    glyph.data["tab-number"] = `${idx}`;
-    if (glyph.notificationType && this.attrs.unreadCountsByType) {
-      glyph.count = this.attrs.unreadCountsByType[glyph.notificationType] || 0;
-      delete glyph.notificationType;
-    }
-
-    return this.attach("avatar-menu-button", glyph);
-  },
-
   allNotificationsTab() {
     return {
       icon: "bell",
-      tabAttrs: this._tabAttrs(QuickAccess.NOTIFICATIONS),
-      id: QuickAccess.NOTIFICATIONS,
+      tabAttrs: this._tabAttrs("all-notifications"),
       role: "tab",
       title: Titles["notifications"],
+      className: "all-notifications-tab menu-link",
     };
   },
 
   repliedTab() {
     return {
       icon: "reply",
-      tabAttrs: this._tabAttrs(QuickAccess.NOTIFICATIONS),
-      id: QuickAccess.NOTIFICATIONS,
+      tabAttrs: this._tabAttrs("replied"),
       role: "tab",
       title: Titles["notifications"],
       notificationType: this.site.notification_types.replied,
+      className: "replied-notifications-tab menu-link",
     };
   },
 
   mentionedTab() {
     return {
       icon: "at",
-      tabAttrs: this._tabAttrs(QuickAccess.NOTIFICATIONS),
-      id: QuickAccess.NOTIFICATIONS,
+      tabAttrs: this._tabAttrs("mentioned"),
       role: "tab",
       title: Titles["notifications"],
       notificationType: this.site.notification_types.mentioned,
+      className: "mentioned-notifications-tab menu-link",
     };
   },
 
   likedTab() {
     return {
       icon: "heart",
-      tabAttrs: this._tabAttrs(QuickAccess.NOTIFICATIONS),
-      id: QuickAccess.NOTIFICATIONS,
+      tabAttrs: this._tabAttrs("liked"),
       role: "tab",
       title: Titles["notifications"],
       notificationType: this.site.notification_types.liked,
+      className: "liked-notifications-tab menu-link",
     };
   },
 
   pmsTabs() {
     return {
       icon: "far-envelope",
-      tabAttrs: this._tabAttrs(QuickAccess.NOTIFICATIONS),
-      id: QuickAccess.NOTIFICATIONS,
+      tabAttrs: this._tabAttrs("pms"),
       role: "tab",
       title: Titles["notifications"],
       notificationType: this.site.notification_types.private_message,
+      className: "pms-notifications-tab menu-link",
     };
   },
 
   preferencesTab() {
-    return this.attach("avatar-menu-button", {
+    return this.attach("avatar-menu-tab", {
       icon: "user-cog",
-      tabAttrs: this._tabAttrs(QuickAccess.NOTIFICATIONS),
-      id: QuickAccess.NOTIFICATIONS,
+      tabAttrs: this._tabAttrs("preferences"),
       role: "tab",
       title: Titles["notifications"],
+      className: "preferences-notifications-tab menu-link",
+      url: `${this.attrs.path}/preferences`,
     });
   },
 
@@ -400,7 +334,7 @@ createWidget("user-menu-side-tabs-container", {
       h(
         "div.top-list",
         { attributes: { "aria-label": "Menu links", role: "tablist" } },
-        topButtons.map((l, index) => this.glyphHtml(l, index))
+        topButtons.map((l, index) => this.tabHtml(l, index))
       ),
       h(
         "div.bottom-list",
