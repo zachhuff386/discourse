@@ -72,7 +72,7 @@ gem 'discourse-fonts'
 
 gem 'barber'
 
-gem 'message_bus'
+gem 'message_bus', git: "https://github.com/discourse/message_bus", branch: "backlog-perf"
 
 gem 'rails_multisite'
 
