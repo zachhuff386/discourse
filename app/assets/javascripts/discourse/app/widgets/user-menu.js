@@ -23,6 +23,7 @@ const Titles = {
 };
 
 let extraGlyphs;
+const DEFAULT_TAB_ID = "notifications";
 
 export function addUserMenuGlyph(glyph) {
   extraGlyphs = extraGlyphs || [];
@@ -211,95 +212,59 @@ createWidgetFrom(ButtonWidget, "avatar-menu-tab", {
 createWidget("user-menu-side-tabs-container", {
   tagName: "div.side-tabs-container",
 
-  _tabAttrs(quickAccessType) {
-    return {
-      "aria-controls": `quick-access-${quickAccessType}`,
-      "aria-selected": "false",
-      tabindex: "-1",
-    };
-  },
-
-  linkHtml(link) {
-    if (this.isActive(link)) {
-      link = this.markAsActive(link);
-    }
-    return this.attach("link", link);
-  },
-
-  tabHtml(tab, idx) {
-    if (this.isActive(tab)) {
-      tab = this.markAsActive(tab);
-    }
-    if (!tab.data) {
-      tab.data = {};
-    }
-    tab.data["tab-number"] = `${idx}`;
-    if (tab.notificationType && this.attrs.unreadCountsByType) {
-      tab.count = this.attrs.unreadCountsByType[tab.notificationType] || 0;
-      delete tab.notificationType;
-    }
-
-    return this.attach("avatar-menu-tab", tab);
-  },
-
   _coreTabs() {
     return [
       {
-        id: "notifications",
+        id: DEFAULT_TAB_ID,
         icon: "bell",
-        className: "all-notifications-tab",
+        classes: ["all-notifications-tab"],
       },
       {
         id: "replied",
         icon: "reply",
-        notificationTypeName: "replied",
-        className: "replied-notifications-tab",
+        notificationType: this.site.notification_types.replied,
+        classes: ["replied-notifications-tab"],
       },
       {
         id: "mentioned",
         icon: "at",
-        notificationTypeName: "mentioned",
-        className: "mentioned-notifications-tab",
+        notificationType: this.site.notification_types.mentioned,
+        classes: ["mentioned-notifications-tab"],
       },
       {
         id: "liked",
         icon: "heart",
-        notificationTypeName: "liked",
-        className: "liked-notifications-tab",
+        notificationType: this.site.notification_types.liked,
+        classes: ["liked-notifications-tab"],
       },
       {
         id: "pms",
         icon: "far-envelope",
-        notificationTypeName: "private_message",
-        className: "pms-notifications-tab",
+        notificationType: this.site.notification_types.private_message,
+        showCountBubble: true,
+        classes: ["pms-notifications-tab"],
       },
       {
         id: "preferences",
         icon: "user-cog",
-        className: "pms-notifications-tab",
+        classes: ["pms-notifications-tab"],
         bottom: true,
         url: `${this.attrs.path}/preferences`,
       },
     ];
   },
 
-  _createTab(id, config, index) {
+  _createTab(id, config) {
     const tab = { role: "tab" };
     tab.icon = config.icon;
-    tab.className = "menu-link";
-    if (config.className) {
-      tab.className += ` ${config.className}`;
-    }
-    if (config.notificationTypeName) {
-      tab.notificationType = this.site.notification_types[
-        config.notificationTypeName
-      ];
-    }
+    const classes = config.classes || [];
+    classes.push("menu-link");
     if (config.url) {
       tab.url = config.url;
     } else {
       tab.action = "switchTab";
-      tab.actionParam = { type: id, titleKey: "tbd" };
+      // TODO: fix titleKey
+      tab.actionParam = { id, titleKey: "<todo>" };
     }
     tab.tabAttrs = {
       "aria-controls": `quick-access-${id}`,
@@ -307,67 +272,50 @@ createWidget("user-menu-side-tabs-container", {
       tabindex: "-1",
     };
     tab.data = config.data || {};
-    tab.data["tab-number"] = `${index}`;
     if (this.attrs.currentQuickAccess === id) {
-      tab.className += " active";
+      classes.push("active");
       tab.tabAttrs["tabindex"] = "0";
       tab.tabAttrs["aria-selected"] = "true";
     }
-    return this.attach("avatar-menu-tab", tab);
+    tab.className = classes.join(" ");
+    return tab;
   },
 
   html() {
-    const topTabs = [];
-    const bottomTabs = [];
+    let topTabs = [];
+    let bottomTabs = [];
     this._coreTabs().forEach((config) => {
       const id = config.id;
       delete config.id;
-      const index = config.bottom ? bottomTabs.size : topTabs.size;
-      const tab = this._createTab(id, config, index);
+      const tab = this._createTab(id, config);
       if (config.bottom) {
         bottomTabs.push(tab);
       } else {
         topTabs.push(tab);
       }
     });
-    // const topTabs = [
-    //   this.allNotificationsTab(),
-    //   this.repliedTab(),
-    //   this.mentionedTab(),
-    //   this.likedTab(),
-    //   this.pmsTabs(),
-    // ];
+
+    topTabs = topTabs.map((tab, index) => {
+      tab.data["tab-number"] = `${index}`;
+      return this.attach("avatar-menu-tab", tab);
+    });
+    bottomTabs = bottomTabs.map((tab, index) => {
+      tab.data["tab-number"] = `${index + topTabs.length}`;
+      return this.attach("avatar-menu-tab", tab);
+    });
 
     return [
       h(
         "div.top-list",
-        { attributes: { "aria-label": "Menu links", role: "tablist" } },
-        // topTabs.map((l, index) => this.tabHtml(l, index))
+        { attributes: { "aria-label": "Menu tabs", role: "tablist" } },
         topTabs
       ),
       h(
         "div.bottom-list",
-        { attributes: { "aria-label": "Menu links", role: "tablist" } },
+        { attributes: { "aria-label": "Menu tabs", role: "tablist" } },
         bottomTabs
       ),
     ];
-  },
-
-  markAsActive(definition) {
-    // definition.action = null;
-    // definition.actionParam = null;
-    // definition.url = definition.data.url;
-
-    if (definition.className) {
-      definition.className += " active";
-    } else {
-      definition.className = "active";
-    }
-
-    definition.tabAttrs["tabindex"] = "0";
-    definition.tabAttrs["aria-selected"] = "true";
-
-    return definition;
   },
 });
 
@@ -409,7 +357,7 @@ export default createWidget("user-menu", {
   },
 
   panelContents() {
-    const path = this.currentUser.get("path");
+    const path = this.currentUser.path;
     const { currentQuickAccess, titleKey } = this.state;
 
     let result = [];
@@ -500,9 +448,9 @@ export default createWidget("user-menu", {
     }
   },
 
-  switchTab({ type, titleKey }) {
-    if (this.state.currentQuickAccess !== type) {
-      this.state.currentQuickAccess = type;
+  switchTab({ id, titleKey }) {
+    if (this.state.currentQuickAccess !== id) {
+      this.state.currentQuickAccess = id;
       this.state.titleKey = titleKey;
     }
   },
@@ -519,11 +467,8 @@ export default createWidget("user-menu", {
   },
 
   quickAccessPanelRevamped(path, titleKey, currentQuickAccess) {
-    const { showLogoutButton } = this.settings;
-    // This deliberately does NOT fallback to a default quick access panel.
-    return this.attach(`quick-access-${this.state.currentQuickAccess}`, {
+    return this.attach("quick-access-notifications", {
       path,
-      showLogoutButton,
       titleKey,
       currentQuickAccess,
     });

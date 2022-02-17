@@ -18,11 +18,18 @@ class NotificationsController < ApplicationController
 
     guardian.ensure_can_see_notifications!(user)
 
+    if type = params[:type].presence
+      type = type.to_i
+      if !Notification.types.keys.include?(type)
+        raise Discourse::InvalidParameters.new(:type)
+      end
+    end
+
     if params[:recent].present?
       limit = (params[:limit] || 15).to_i
       limit = 50 if limit > 50
 
-      notifications = Notification.recent_report(current_user, limit)
+      notifications = Notification.recent_report(current_user, limit, type: type)
       changed = false
 
       if notifications.present? && !(params.has_key?(:silent) || @readonly_mode)
