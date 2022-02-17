@@ -242,114 +242,121 @@ createWidget("user-menu-side-tabs-container", {
     return this.attach("avatar-menu-tab", tab);
   },
 
-  // messagesGlyph() {
-  //   return {
-  //     title: Titles["messages"],
-  //     action: UserMenuAction.QUICK_ACCESS,
-  //     actionParam: QuickAccess.MESSAGES,
-  //     className: "user-pms-link menu-link",
-  //     id: QuickAccess.MESSAGES,
-  //     icon: "envelope",
-  //     data: { url: `${this.attrs.path}/messages` },
-  //     role: "tab",
-  //     tabAttrs: this._tabAttrs(QuickAccess.MESSAGES),
-  //   };
-  // },
-
-  allNotificationsTab() {
-    return {
-      icon: "bell",
-      tabAttrs: this._tabAttrs("all-notifications"),
-      role: "tab",
-      title: Titles["notifications"],
-      className: "all-notifications-tab menu-link",
-    };
+  _coreTabs() {
+    return [
+      {
+        id: "notifications",
+        icon: "bell",
+        className: "all-notifications-tab",
+      },
+      {
+        id: "replied",
+        icon: "reply",
+        notificationTypeName: "replied",
+        className: "replied-notifications-tab",
+      },
+      {
+        id: "mentioned",
+        icon: "at",
+        notificationTypeName: "mentioned",
+        className: "mentioned-notifications-tab",
+      },
+      {
+        id: "liked",
+        icon: "heart",
+        notificationTypeName: "liked",
+        className: "liked-notifications-tab",
+      },
+      {
+        id: "pms",
+        icon: "far-envelope",
+        notificationTypeName: "private_message",
+        className: "pms-notifications-tab",
+      },
+      {
+        id: "preferences",
+        icon: "user-cog",
+        className: "pms-notifications-tab",
+        bottom: true,
+        url: `${this.attrs.path}/preferences`,
+      },
+    ];
   },
 
-  repliedTab() {
-    return {
-      icon: "reply",
-      tabAttrs: this._tabAttrs("replied"),
-      role: "tab",
-      title: Titles["notifications"],
-      notificationType: this.site.notification_types.replied,
-      className: "replied-notifications-tab menu-link",
+  _createTab(id, config, index) {
+    const tab = { role: "tab" };
+    tab.icon = config.icon;
+    tab.className = "menu-link";
+    if (config.className) {
+      tab.className += ` ${config.className}`;
+    }
+    if (config.notificationTypeName) {
+      tab.notificationType = this.site.notification_types[
+        config.notificationTypeName
+      ];
+    }
+    if (config.url) {
+      tab.url = config.url;
+    } else {
+      tab.action = "switchTab";
+      tab.actionParam = { type: id, titleKey: "tbd" };
+    }
+    tab.tabAttrs = {
+      "aria-controls": `quick-access-${id}`,
+      "aria-selected": "false",
+      tabindex: "-1",
     };
-  },
-
-  mentionedTab() {
-    return {
-      icon: "at",
-      tabAttrs: this._tabAttrs("mentioned"),
-      role: "tab",
-      title: Titles["notifications"],
-      notificationType: this.site.notification_types.mentioned,
-      className: "mentioned-notifications-tab menu-link",
-    };
-  },
-
-  likedTab() {
-    return {
-      icon: "heart",
-      tabAttrs: this._tabAttrs("liked"),
-      role: "tab",
-      title: Titles["notifications"],
-      notificationType: this.site.notification_types.liked,
-      className: "liked-notifications-tab menu-link",
-    };
-  },
-
-  pmsTabs() {
-    return {
-      icon: "far-envelope",
-      tabAttrs: this._tabAttrs("pms"),
-      role: "tab",
-      title: Titles["notifications"],
-      notificationType: this.site.notification_types.private_message,
-      className: "pms-notifications-tab menu-link",
-    };
-  },
-
-  preferencesTab() {
-    return this.attach("avatar-menu-tab", {
-      icon: "user-cog",
-      tabAttrs: this._tabAttrs("preferences"),
-      role: "tab",
-      title: Titles["notifications"],
-      className: "preferences-notifications-tab menu-link",
-      url: `${this.attrs.path}/preferences`,
-    });
+    tab.data = config.data || {};
+    tab.data["tab-number"] = `${index}`;
+    if (this.attrs.currentQuickAccess === id) {
+      tab.className += " active";
+      tab.tabAttrs["tabindex"] = "0";
+      tab.tabAttrs["aria-selected"] = "true";
+    }
+    return this.attach("avatar-menu-tab", tab);
   },
 
   html() {
-    const topButtons = [
-      this.allNotificationsTab(),
-      this.repliedTab(),
-      this.mentionedTab(),
-      this.likedTab(),
-      this.pmsTabs(),
-    ];
+    const topTabs = [];
+    const bottomTabs = [];
+    this._coreTabs().forEach((config) => {
+      const id = config.id;
+      delete config.id;
+      const index = config.bottom ? bottomTabs.size : topTabs.size;
+      const tab = this._createTab(id, config, index);
+      if (config.bottom) {
+        bottomTabs.push(tab);
+      } else {
+        topTabs.push(tab);
+      }
+    });
+    // const topTabs = [
+    //   this.allNotificationsTab(),
+    //   this.repliedTab(),
+    //   this.mentionedTab(),
+    //   this.likedTab(),
+    //   this.pmsTabs(),
+    // ];
 
     return [
       h(
         "div.top-list",
         { attributes: { "aria-label": "Menu links", role: "tablist" } },
-        topButtons.map((l, index) => this.tabHtml(l, index))
+        // topTabs.map((l, index) => this.tabHtml(l, index))
+        topTabs
       ),
       h(
         "div.bottom-list",
         { attributes: { "aria-label": "Menu links", role: "tablist" } },
-        [this.preferencesTab()]
+        bottomTabs
       ),
     ];
   },
 
   markAsActive(definition) {
-    // Clicking on an active quick access tab icon should redirect the user to
-    // the full page.
-    definition.action = null;
-    definition.actionParam = null;
-    definition.url = definition.data.url;
+    // definition.action = null;
+    // definition.actionParam = null;
+    // definition.url = definition.data.url;
 
     if (definition.className) {
       definition.className += " active";
@@ -361,13 +368,6 @@ createWidget("user-menu-side-tabs-container", {
     definition.tabAttrs["aria-selected"] = "true";
 
     return definition;
-  },
-
-  isActive({ action, actionParam }) {
-    return (
-      action === UserMenuAction.QUICK_ACCESS &&
-      actionParam === this.attrs.currentQuickAccess
-    );
   },
 });
 
@@ -415,7 +415,7 @@ export default createWidget("user-menu", {
     let result = [];
     if (this.siteSettings.enable_revamped_notifications_menu) {
       result.push(
-        this.quickAccessPanel(path, titleKey, currentQuickAccess),
+        this.quickAccessPanelRevamped(path, titleKey, currentQuickAccess),
         this.attach("user-menu-side-tabs-container", {
           path,
           currentQuickAccess,
@@ -500,7 +500,25 @@ export default createWidget("user-menu", {
     }
   },
 
+  switchTab({ type, titleKey }) {
+    if (this.state.currentQuickAccess !== type) {
+      this.state.currentQuickAccess = type;
+      this.state.titleKey = titleKey;
+    }
+  },
+
   quickAccessPanel(path, titleKey, currentQuickAccess) {
+    const { showLogoutButton } = this.settings;
+    // This deliberately does NOT fallback to a default quick access panel.
+    return this.attach(`quick-access-${this.state.currentQuickAccess}`, {
+      path,
+      showLogoutButton,
+      titleKey,
+      currentQuickAccess,
+    });
+  },
+
+  quickAccessPanelRevamped(path, titleKey, currentQuickAccess) {
     const { showLogoutButton } = this.settings;
     // This deliberately does NOT fallback to a default quick access panel.
     return this.attach(`quick-access-${this.state.currentQuickAccess}`, {
