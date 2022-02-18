@@ -264,7 +264,12 @@ createWidget("user-menu-side-tabs-container", {
     } else {
       tab.action = "switchTab";
       // TODO: fix titleKey
-      tab.actionParam = { id, titleKey: "<todo>" };
+      const actionParam = {
+        id,
+        titleKey: "<todo>",
+        notificationType: config.notificationType,
+      };
+      tab.actionParam = actionParam;
     }
     tab.tabAttrs = {
       "aria-controls": `quick-access-${id}`,
@@ -352,18 +357,23 @@ export default createWidget("user-menu", {
       currentQuickAccess: QuickAccess.NOTIFICATIONS,
       titleKey: Titles["notifications"],
       hasUnread: false,
-      markUnread: null,
+      markRead: null,
     };
   },
 
   panelContents() {
     const path = this.currentUser.path;
-    const { currentQuickAccess, titleKey } = this.state;
+    const { currentQuickAccess, titleKey, notificationType } = this.state;
 
     let result = [];
     if (this.siteSettings.enable_revamped_notifications_menu) {
       result.push(
-        this.quickAccessPanelRevamped(path, titleKey, currentQuickAccess),
+        this.quickAccessPanelRevamped(
+          path,
+          titleKey,
+          currentQuickAccess,
+          notificationType
+        ),
         this.attach("user-menu-side-tabs-container", {
           path,
           currentQuickAccess,
@@ -448,9 +458,10 @@ export default createWidget("user-menu", {
     }
   },
 
-  switchTab({ id, titleKey }) {
+  switchTab({ id, titleKey, notificationType }) {
     if (this.state.currentQuickAccess !== id) {
       this.state.currentQuickAccess = id;
+      this.state.notificationType = notificationType;
       this.state.titleKey = titleKey;
     }
   },
@@ -466,11 +477,18 @@ export default createWidget("user-menu", {
     });
   },
 
-  quickAccessPanelRevamped(path, titleKey, currentQuickAccess) {
+  quickAccessPanelRevamped(
+    path,
+    titleKey,
+    currentQuickAccess,
+    notificationType
+  ) {
     return this.attach("quick-access-notifications", {
       path,
       titleKey,
       currentQuickAccess,
+      notificationType,
+      revamped: true,
     });
   },
 });

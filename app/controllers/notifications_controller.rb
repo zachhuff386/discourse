@@ -20,7 +20,7 @@ class NotificationsController < ApplicationController
 
     if type = params[:type].presence
       type = type.to_i
-      if !Notification.types.keys.include?(type)
+      if !Notification.types.values.include?(type)
         raise Discourse::InvalidParameters.new(:type)
       end
     end
@@ -32,7 +32,7 @@ class NotificationsController < ApplicationController
       notifications = Notification.recent_report(current_user, limit, type: type)
       changed = false
 
-      if notifications.present? && !(params.has_key?(:silent) || @readonly_mode)
+      if !type && notifications.present? && !(params.has_key?(:silent) || @readonly_mode)
         # ordering can be off due to PMs
         max_id = notifications.map(&:id).max
         changed = current_user.saw_notification_id(max_id)
@@ -51,6 +51,7 @@ class NotificationsController < ApplicationController
         .includes(:topic)
         .order(created_at: :desc)
 
+      notifications = notifications.where(notification_type: type) if type
       notifications = notifications.where(read: true) if params[:filter] == "read"
 
       notifications = notifications.where(read: false) if params[:filter] == "unread"

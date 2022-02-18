@@ -30,8 +30,14 @@ createWidget("no-quick-access-notifications", {
 });
 
 createWidgetFrom(QuickAccessPanel, "quick-access-notifications", {
-  buildKey: () => "quick-access-notifications",
   emptyStateWidget: "no-quick-access-notifications",
+  buildKey: (attrs) => {
+    let key = "quick-access-notifications";
+    if (attrs.revamped && attrs.notificationType) {
+      key += `-${attrs.notificationType}`;
+    }
+    return key;
+  },
 
   buildAttributes() {
     return { tabindex: -1 };
@@ -73,14 +79,23 @@ createWidgetFrom(QuickAccessPanel, "quick-access-notifications", {
   },
 
   _findStaleItemsInStore() {
-    return this.store.findStale(
-      "notification",
-      {
-        recent: true,
-        silent: this.currentUser.enforcedSecondFactor,
-        limit: 30,
-      },
-      { cacheKey: "recent-notifications" }
-    );
+    const params = {
+      recent: true,
+      silent: this.currentUser.enforcedSecondFactor,
+      limit: 30,
+    };
+    let cacheKey = "recent-notifications";
+
+    if (
+      this.siteSettings.enable_revamped_notifications_menu &&
+      this.attrs.notificationType
+    ) {
+      params.type = this.attrs.notificationType;
+      cacheKey += `-${this.attrs.notificationType}`;
+    }
+
+    return this.store.findStale("notification", params, {
+      cacheKey,
+    });
   },
 });
