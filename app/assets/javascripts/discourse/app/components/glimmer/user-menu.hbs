@@ -1,0 +1,37 @@
+<div class="user-menu"> {{! TODO: handle data-click-outside}}
+  <div data-max-width="320" class="menu-panel" style="right: unset">
+    <div class="panel-body">
+      <div class="panel-body-contents">
+        <div class="menu-links-header">
+          <div class="menu-links-row">
+            <div aria-label="Menu links" role="tablist" class="glyphs">
+              {{#each this.coreMenuButtons as |button index|}}
+                <Glimmer::DButton
+                  role="tab"
+                  data-tab-number={{index}}
+                  class={{button.className}}
+                  tabindex={{if button.active "0" "-1"}}
+                  aria-controls={{concat "quick-access-" button.id}}
+                  aria-selected={{if button.active "true" "false"}}
+                  id={{concat "quick-access-tab-" button.id}}
+                  @flat={{true}}
+                  @icon={{button.icon}}
+                  @translatedTitle={{button.title}}
+                  @onClick={{fn changeTab button}}
+                />
+              {{/each}}
+            </div>
+          </div>
+        </div>
+        <div
+          id={{concat "quick-access-" activeTabId}}
+          aria-labelledby={{concat "quick-access-tab-" activeTabId}}
+          role=tabpanel
+          tabindex=0
+          class="quick-access-panel">
+            <this.activeTabComponent/>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

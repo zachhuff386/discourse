@@ -1,0 +1,34 @@
+{{#if this.isLoading}}
+  <div class="spinner-container">
+    <div class="spinner"></div>
+  </div>
+{{else}}
+  {{#if this.items.length}}
+    <ul>
+      {{#each this.items as |item|}}
+        <item.component @item={{item}}/>
+      {{/each}}
+    </ul>
+    <div class="panel-body-bottom">
+      {{#if this.viewAllButton}}
+        <a
+          class="btn btn-default btn-icon no-text show-all"
+          href={{this.viewAllButton.href}}
+          title={{this.viewAllButton.title}}>
+          {{d-icon "chevron-down" aria-label=this.viewAllButton.title role=img}}
+        </a>
+      {{/if}}
+      {{#if this.hasUnread}}
+        <Glimmer::DButton
+          class="notifications-dismiss"
+          @label="user.dismiss"
+          @translatedTitle={{i18n "user.dismiss_notifications_tooltip"}}
+          @icon="check"
+          @onClick={{action this.dismissUnread}}
+        />
+      {{/if}}
+    </div>
+  {{else}}
+    {{!-- TODO: blank panel --}}
+  {{/if}}
+{{/if}}

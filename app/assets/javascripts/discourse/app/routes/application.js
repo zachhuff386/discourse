@@ -241,6 +241,7 @@ const ApplicationRoute = DiscourseRoute.extend(OpenComposer, {
   },
 
   renderTemplate() {
+    performance.mark("discourse-app-start-rendering");
     this.render("application");
     this.render("user-card", { into: "application", outlet: "user-card" });
     this.render("modal", { into: "application", outlet: "modal" });

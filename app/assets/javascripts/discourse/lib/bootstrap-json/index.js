@@ -121,6 +121,7 @@ function body(buffer, bootstrap) {
 function bodyFooter(buffer, bootstrap, headers) {
   buffer.push(bootstrap.theme_html.body_tag);
   buffer.push(bootstrap.html.before_body_close);
+  return;
 
   let v = generateUID();
   buffer.push(`

@@ -206,6 +206,10 @@ export default createWidget("user-menu", {
     showLogoutButton: true,
   },
 
+  didRenderWidget() {
+    performance.mark("app-menu|end");
+  },
+
   userMenuNavigation(nav) {
     const maxTabNumber = document.querySelectorAll(".glyphs button").length - 1;
     const isLeft = nav.key === "ArrowLeft";

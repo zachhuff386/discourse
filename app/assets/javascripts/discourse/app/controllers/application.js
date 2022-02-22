@@ -2,11 +2,13 @@ import { isAppWebview, isiOSPWA } from "discourse/lib/utilities";
 import Controller from "@ember/controller";
 import discourseComputed from "discourse-common/utils/decorators";
 import { inject as service } from "@ember/service";
+import { action } from "@ember/object";
 
 export default Controller.extend({
   showTop: true,
   showFooter: false,
   router: service(),
+  queryParams: ["button"],
 
   @discourseComputed
   canSignUp() {

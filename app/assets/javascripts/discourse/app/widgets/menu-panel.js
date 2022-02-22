@@ -45,7 +45,7 @@ createWidget("menu-panel", {
 
   buildAttributes(attrs) {
     if (attrs.maxWidth) {
-      return { "data-max-width": attrs.maxWidth };
+      return { "data-max-width": attrs.maxWidth, style: "right: unset;" };
     }
   },
 });

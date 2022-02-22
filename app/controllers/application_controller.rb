@@ -726,6 +726,7 @@ class ApplicationController < ActionController::Base
   end
 
   def authorize_mini_profiler
+    return
     return unless mini_profiler_enabled?
     Rack::MiniProfiler.authorize_request
   end

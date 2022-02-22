@@ -337,7 +337,8 @@ const SiteHeaderComponent = MountWidget.extend(
       }
 
       const windowWidth = document.body.offsetWidth;
-      const viewMode = this.site.mobileView ? "slide-in" : "drop-down";
+      // const viewMode = this.site.mobileView ? "slide-in" : "drop-down";
+      const viewMode = "drop-down";
 
       menuPanels.forEach((panel) => {
         const headerCloak = document.querySelector(".header-cloak");

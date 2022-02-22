@@ -1,0 +1,19 @@
+<li class={{this.className}}>
+  {{#if this.url}}
+    <a href={{this.url}} data-auto-route=true title={{this.notificationTitle}}>
+      {{d-icon
+        this.icon
+        aria-label=(i18n (concat "notifications.titles." this.notificationName))
+        role=img
+      }}
+      <div>{{replace-emoji this.text}}</div>
+    </a>
+  {{else}}
+    {{d-icon
+      this.icon
+      aria-label=(i18n (concat "notifications.titles." this.notificationName))
+      role=img
+    }}
+      <div>{{replace-emoji this.text}}</div>
+  {{/if}}
+</li>

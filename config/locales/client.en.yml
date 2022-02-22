@@ -2493,6 +2493,8 @@ en:
     not_logged_in_user: "user page with summary of current activity and preferences"
     current_user: "go to your user page"
     view_all: "view all %{tab}"
+    view_all_v2:
+      notifications: "view all notifications"
 
     topics:
       new_messages_marker: "last visit"
