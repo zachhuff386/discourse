@@ -22,9 +22,7 @@ import { popupAjaxError } from "discourse/lib/ajax-error";
 import { resolveShareUrl } from "discourse/helpers/share-url";
 import DiscourseURL, { userPath } from "discourse/lib/url";
 import deprecated from "discourse-common/lib/deprecated";
-import { run } from "@ember/runloop";
 
-run.backburner.DEBUG = true;
 export async function loadTopicView(topic, args) {
   const data = deepMerge({}, args);
   const url = `${getURL("/t/")}${topic.id}`;
@@ -34,12 +32,12 @@ export async function loadTopicView(topic, args) {
   delete data.__type;
   delete data.store;
 
-  const json = await PreloadStore.getAndRemove(`topic_${topic.id}`, () =>
+  return await PreloadStore.getAndRemove(`topic_${topic.id}`, () =>
     ajax(jsonUrl, { data })
-  );
-
-  topic.updateFromJson(json);
-  return json;
+  ).then((json) => {
+    topic.updateFromJson(json);
+    return json;
+  });
 }
 
 export const ID_CONSTRAINT = /^\d+$/;

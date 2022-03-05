@@ -201,6 +201,7 @@
             {{plugin-outlet name="topic-above-posts" tagName="span" connectorTagName="div" args=(hash model=model)}}
 
             {{#unless model.postStream.loadingFilter}}
+              {{log "template"}}
               {{scrolling-post-stream
                 posts=postsToRender
                 canCreatePost=model.details.can_create_post

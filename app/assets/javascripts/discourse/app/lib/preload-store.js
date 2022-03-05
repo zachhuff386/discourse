@@ -1,5 +1,6 @@
-// We can insert data into the PreloadStore when the document is loaded.
+//  We can insert data into the PreloadStore when the document is loaded.
 // The data can be accessed once by a key, after which it is removed
+import { Promise } from "rsvp";
 
 export default {
   data: new Map(),
@@ -14,18 +15,29 @@ export default {
     from the store.
     So, for example, you can't load a preloaded topic more than once.
   **/
-  async getAndRemove(key, finder) {
+  getAndRemove(key, finder) {
     if (this.data.has(key)) {
-      const result = this.data.get(key);
+      let promise = Promise.resolve(this.data.get(key));
       this.data.delete(key);
-      return result;
+      return promise;
     }
 
     if (finder) {
-      return await finder();
+      return new Promise(function (resolve, reject) {
+        let result = finder();
+
+        // If the finder returns a promise, we support that too
+        if (result && result.then) {
+          resolve(result);
+          // .then((toResolve) => resolve(toResolve))
+          // .catch((toReject) => reject(toReject));
+        } else {
+          resolve(result);
+        }
+      });
     }
 
-    return null;
+    return Promise.resolve(null);
   },
 
   get(key) {
