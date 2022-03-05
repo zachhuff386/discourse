@@ -13,6 +13,7 @@ export default DiscourseRoute.extend({
 
   model(params) {
     this._params = params;
+    console.log("model");
 
     return ajax(`/admin/logs/search_logs/term.json`, {
       data: {
@@ -38,11 +39,13 @@ export default DiscourseRoute.extend({
 
       const model = EmberObject.create({ type: "search_log_term" });
       model.setProperties(json.term);
+      console.log("model aftr");
       return model;
     });
   },
 
   setupController(controller, model) {
+    console.log("setupController");
     const params = this._params;
     controller.setProperties({
       model,

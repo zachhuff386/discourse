@@ -3,13 +3,13 @@ import DiscourseURL from "discourse/lib/url";
 import Draft from "discourse/models/draft";
 import { isEmpty } from "@ember/utils";
 import { isTesting } from "discourse-common/config/environment";
-import { schedule } from "@ember/runloop";
 import { action } from "@ember/object";
 
 // This route is used for retrieving a topic based on params
 export default DiscourseRoute.extend({
   // Avoid default model hook
   model(params) {
+    console.log("model start");
     params = params || {};
     params.track_visit = true;
 
@@ -22,20 +22,30 @@ export default DiscourseRoute.extend({
     }
     params.forceLoad = true;
 
-    return postStream
-      .refresh(params)
-      .then(() => params)
-      .catch((e) => {
-        if (!isTesting()) {
-          // eslint-disable-next-line no-console
-          console.log("Could not view topic", e);
-        }
-        params._loading_error = true;
-        return params;
-      });
+    return (
+      postStream
+        .refresh(params)
+        // .then(async () => {
+        //   console.log("async");
+        // })
+        .then(() => {
+          console.log("model end");
+
+          return params;
+        })
+        .catch((e) => {
+          if (!isTesting()) {
+            // eslint-disable-next-line no-console
+            console.log("Could not view topic", e);
+          }
+          params._loading_error = true;
+          return params;
+        })
+    );
   },
 
   afterModel() {
+    console.log("afterModel");
     const topic = this.modelFor("topic");
 
     if (topic.isPrivateMessage && topic.suggested_topics) {
@@ -49,6 +59,7 @@ export default DiscourseRoute.extend({
   },
 
   setupController(controller, params, { _discourse_anchor }) {
+    console.log("setupController");
     // Don't do anything else if we couldn't load
     // TODO: Tests require this but it seems bad
     if (params._loading_error) {
@@ -74,6 +85,7 @@ export default DiscourseRoute.extend({
     );
     const closest = closestPost.post_number;
 
+    console.log("set last_read_post_number");
     topicController.setProperties({
       "model.currentPost": closest,
       enteredIndex: topic.postStream.progressIndexOfPost(closestPost),
@@ -85,10 +97,7 @@ export default DiscourseRoute.extend({
     this.appEvents.trigger("page:topic-loaded", topic);
     topicController.subscribe();
 
-    // Highlight our post after the next render
-    schedule("afterRender", () =>
-      this.appEvents.trigger("post:highlight", closest)
-    );
+    this.appEvents.trigger("post:highlight", closest);
 
     const opts = {};
     if (document.location.hash) {

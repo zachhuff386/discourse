@@ -22,7 +22,9 @@ import { popupAjaxError } from "discourse/lib/ajax-error";
 import { resolveShareUrl } from "discourse/helpers/share-url";
 import DiscourseURL, { userPath } from "discourse/lib/url";
 import deprecated from "discourse-common/lib/deprecated";
+import { run } from "@ember/runloop";
 
+run.backburner.DEBUG = true;
 export async function loadTopicView(topic, args) {
   const data = deepMerge({}, args);
   const url = `${getURL("/t/")}${topic.id}`;

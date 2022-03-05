@@ -52,7 +52,10 @@ export default Component.extend({
 
     this._rootNode = document.createElement("div");
     this.element.appendChild(this._rootNode);
-    this._timeout = scheduleOnce("render", this, this.rerenderWidget);
+    this._timeout = scheduleOnce("render", this, () => {
+      console.log("didInsertElement");
+      this.rerenderWidget();
+    });
   },
 
   willClearRender() {
@@ -103,12 +106,16 @@ export default Component.extend({
       this._renderCallback = callback;
     }
 
-    scheduleOnce("render", this, this.rerenderWidget);
+    scheduleOnce("render", this, () => {
+      console.log("queueRerender");
+      this.rerenderWidget();
+    });
   },
 
   buildArgs() {},
 
   rerenderWidget() {
+    console.log("rerenderWidget");
     cancel(this._timeout);
 
     if (this._rootNode) {

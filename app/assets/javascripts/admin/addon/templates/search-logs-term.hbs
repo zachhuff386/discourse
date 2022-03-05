@@ -7,7 +7,7 @@
     onChange=(action (mut searchType))
   }}
 </div>
-
+{{log "template"}}
 <h2>
   {{#link-to "full-page-search" (query-params q=term)}}{{term}}{{/link-to}}
 </h2>

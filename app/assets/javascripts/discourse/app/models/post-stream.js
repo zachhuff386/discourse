@@ -13,7 +13,9 @@ import { get } from "@ember/object";
 import { highlightPost } from "discourse/lib/utilities";
 import { isEmpty } from "@ember/utils";
 import { loadTopicView } from "discourse/models/topic";
-import { schedule } from "@ember/runloop";
+import { run, schedule } from "@ember/runloop";
+
+run.backburner.DEBUG = true;
 
 let _lastEditNotificationClick = null;
 export function setLastEditNotificationClick(
@@ -320,6 +322,7 @@ export default RestModel.extend({
     is already loaded, it will simply scroll there and load nothing.
   **/
   refresh(opts) {
+    console.log("refresh");
     opts = opts || {};
     opts.nearPost = parseInt(opts.nearPost, 10);
 
@@ -349,23 +352,30 @@ export default RestModel.extend({
     opts = deepMerge(opts, this.streamFilters);
 
     // Request a topicView
-    return loadTopicView(topic, opts)
-      .then((json) => {
-        this.updateFromJson(json.post_stream);
-        this.setProperties({
-          loadingFilter: false,
-          timelineLookup: json.timeline_lookup,
-          loaded: true,
-        });
-        this._checkIfShouldShowRevisions();
-      })
-      .catch((result) => {
-        this.errorLoading(result);
-        throw new Error(result);
-      })
-      .finally(() => {
-        this.set("loadingNearPost", null);
-      });
+    return (
+      loadTopicView(topic, opts)
+        .then((json) => {
+          console.log("then");
+          this.updateFromJson(json.post_stream);
+          this.setProperties({
+            loadingFilter: false,
+            timelineLookup: json.timeline_lookup,
+            loaded: true,
+          });
+          this._checkIfShouldShowRevisions();
+        })
+        // .then(async () => {
+        //   console.log("async");
+        // })
+        .catch((result) => {
+          this.errorLoading(result);
+          throw new Error(result);
+        })
+        .finally(() => {
+          console.log("finally");
+          this.set("loadingNearPost", null);
+        })
+    );
   },
 
   // Fill in a gap of posts before a particular post

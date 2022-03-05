@@ -282,11 +282,13 @@ export default createWidget("post-stream", {
         );
       }
 
+      console.log("before attach");
       if (
         i !== postArrayLength - 1 &&
         maxPostNumber <= attrs.highestPostNumber &&
         attrs.lastReadPostNumber === post.post_number
       ) {
+        console.log("attach");
         result.push(
           this.attach("topic-post-visited-line", {
             post_number: post.post_number,
