@@ -23,14 +23,14 @@ class BulkImport::Generic < BulkImport::Base
   end
 
   def execute
-    import_categories
-    import_users
-    import_user_emails
+    # import_categories
+    # import_users
+    # import_user_emails
     #import_single_sign_on_records
-    import_topics
-    import_posts
-    import_topic_allowed_users
-    import_likes
+    # import_topics
+    # import_posts
+    # import_topic_allowed_users
+    # import_likes
     import_user_stats
   end
 
@@ -243,8 +243,6 @@ class BulkImport::Generic < BulkImport::Base
         JOIN topic_counts tc ON u.id = tc.user_id
         JOIN first_post fp on u.id = fp.user_id
     SQL
-
-
 
     create_user_stats(users) do |row|
       user = {
