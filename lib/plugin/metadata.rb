@@ -32,7 +32,7 @@ class Plugin::Metadata
     "discourse-data-explorer",
     "discourse-details",
     "discourse-docs",
-    "discourse-encrypt",
+    # "discourse-encrypt",
     "discourse-follow",
     "discourse-fontawesome-pro",
     "discourse-footnote",
