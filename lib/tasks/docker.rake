@@ -111,7 +111,9 @@ task 'docker:test' do
       # for js tests
       ENV["SKIP_MULTISITE"] = "1" if ENV["JS_ONLY"]
 
-      @good &&= run_or_fail("bundle exec rake db:create")
+      unless ENV['SKIP_DB_CREATE']
+        @good &&= run_or_fail("bundle exec rake db:create")
+      end
 
       if ENV['USE_TURBO']
         @good &&= run_or_fail("bundle exec rake parallel:create")
