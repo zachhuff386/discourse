@@ -100,8 +100,10 @@ task 'docker:test' do
       puts "Starting background redis"
       @redis_pid = Process.spawn('redis-server --dir tmp/test_data/redis')
 
-      puts "Initializing postgres"
-      system("script/start_test_db.rb --skip-run", exception: true)
+      unless ENV['SKIP_DB_CREATE']
+        puts "Initializing postgres"
+        system("script/start_test_db.rb --skip-run", exception: true)
+      end
 
       puts "Starting postgres"
       @pg_pid = Process.spawn("script/start_test_db.rb --skip-setup --exec")
