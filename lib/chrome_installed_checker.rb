@@ -13,6 +13,7 @@ class ChromeInstalledChecker
       binary = "google-chrome-stable"
     end
     binary ||= "google-chrome" if system("command -v google-chrome >/dev/null;")
+    binary ||= "chromium" if system("command -v chromium >/dev/null;")
 
     if !binary
       raise ChromeNotInstalled.new("Chrome is not installed. Download from https://www.google.com/chrome/browser/desktop/index.html")
