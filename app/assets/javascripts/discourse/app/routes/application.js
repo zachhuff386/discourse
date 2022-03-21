@@ -25,6 +25,16 @@ function unlessReadOnly(method, message) {
   };
 }
 
+function unlessStrictlyReadOnly(method, message) {
+  return function () {
+    if (this.site.get("isReadOnly") && !this.site.get("isStaffWritesOnly")) {
+      bootbox.alert(message);
+    } else {
+      this[method]();
+    }
+  };
+}
+
 const ApplicationRoute = DiscourseRoute.extend(OpenComposer, {
   siteTitle: setting("title"),
   shortSiteDescription: setting("short_site_description"),
@@ -110,7 +120,7 @@ const ApplicationRoute = DiscourseRoute.extend(OpenComposer, {
       return true;
     },
 
-    showLogin: unlessReadOnly(
+    showLogin: unlessStrictlyReadOnly(
       "handleShowLogin",
       I18n.t("read_only_mode.login_disabled")
     ),
