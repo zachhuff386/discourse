@@ -648,7 +648,7 @@ Discourse::Application.routes.draw do
       put "rebake"
       put "unhide"
       put "locked"
-      put "notice"
+      put "notice" => "posts#toggle_notice" # can’t use 'notice' with Rails 7.0+. Might be a bug
       get "replies"
       get "revisions/latest" => "posts#latest_revision"
       get "revisions/:revision" => "posts#revisions", constraints: { revision: /\d+/ }
