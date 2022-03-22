@@ -1318,6 +1318,36 @@ describe SessionController do
   end
 
   describe '#create' do
+    context 'read only mode' do
+      use_redis_snapshotting
+
+      before do
+        Discourse.enable_readonly_mode
+      end
+
+      it 'prevents login' do
+        post "/session.json", params: {
+          login: user.username, password: 'myawesomepassword'
+        }
+        expect(response.status).not_to eq(200)
+      end
+    end
+
+    context 'staff writes only mode' do
+      use_redis_snapshotting
+
+      before do
+        Discourse.enable_readonly_mode(Discourse::STAFF_WRITES_ONLY_MODE_KEY)
+      end
+
+      it 'allows login' do
+        post "/session.json", params: {
+          login: user.username, password: 'myawesomepassword'
+        }
+        expect(response.status).to eq(200)
+      end
+    end
+
     context 'local login is disabled' do
       before do
         SiteSetting.enable_local_logins = false
