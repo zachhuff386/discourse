@@ -10,7 +10,7 @@ class SessionController < ApplicationController
 
   requires_login only: [:second_factor_auth_show, :second_factor_auth_perform]
 
-  allow_in_staff_writes_mode :create
+  allow_in_staff_writes_only_mode :create
 
   ACTIVATE_USER_KEY = "activate_user"
 

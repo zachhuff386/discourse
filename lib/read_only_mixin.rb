@@ -2,16 +2,16 @@
 
 module ReadOnlyMixin
   module ClassMethods
-    def actions_allowed_in_staff_writes_mode
-      @actions_allowed_in_staff_writes_mode ||= []
+    def actions_allowed_in_staff_writes_only_mode
+      @actions_allowed_in_staff_writes_only_mode ||= []
     end
 
-    def allow_in_staff_writes_mode(*actions)
-      actions_allowed_in_staff_writes_mode.concat(actions.map(&:to_sym))
+    def allow_in_staff_writes_only_mode(*actions)
+      actions_allowed_in_staff_writes_only_mode.concat(actions.map(&:to_sym))
     end
 
-    def allowed_in_staff_writes_mode?(action_name)
-      actions_allowed_in_staff_writes_mode.include?(action_name.to_sym)
+    def allowed_in_staff_writes_only_mode?(action_name)
+      actions_allowed_in_staff_writes_only_mode.include?(action_name.to_sym)
     end
   end
 
@@ -36,8 +36,8 @@ module ReadOnlyMixin
     response.headers['Discourse-Readonly'] = 'true' if @readonly_mode
   end
 
-  def allowed_in_staff_writes_mode?
-    self.class.allowed_in_staff_writes_mode?(action_name)
+  def allowed_in_staff_writes_only_mode?
+    self.class.allowed_in_staff_writes_only_mode?(action_name)
   end
 
   def block_if_readonly_mode
@@ -45,7 +45,7 @@ module ReadOnlyMixin
     return if request.get? || request.head?
 
     if @staff_writes_only_mode
-      raise Discourse::ReadOnly.new if !current_user&.staff? && !allowed_in_staff_writes_mode?
+      raise Discourse::ReadOnly.new if !current_user&.staff? && !allowed_in_staff_writes_only_mode?
     elsif @readonly_mode
       raise Discourse::ReadOnly.new
     end
