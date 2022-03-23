@@ -15,6 +15,10 @@ module ReadOnlyMixin
     end
   end
 
+  def staff_writes_only_mode?
+    @staff_writes_only_mode
+  end
+
   def check_readonly_mode
     if Discourse.readonly_mode?
       @readonly_mode = true

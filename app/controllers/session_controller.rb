@@ -340,7 +340,15 @@ class SessionController < ApplicationController
       return render(json: @second_factor_failure_payload)
     end
 
-    (user.active && user.email_confirmed?) ? login(user) : not_activated(user)
+    if user.active && user.email_confirmed?
+      if staff_writes_only_mode? ? user.staff? : true
+        login(user)
+      else
+        raise Discourse::ReadOnly.new
+      end
+    else
+      not_activated(user)
+    end
   end
 
   def email_login_info
