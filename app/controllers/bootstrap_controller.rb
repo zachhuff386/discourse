@@ -26,7 +26,9 @@ class BootstrapController < ApplicationController
     else
       add_style(mobile_view? ? :mobile : :desktop)
     end
-    add_style(:admin) if staff?
+    if staff?
+      add_style(rtl? ? :admin_rtl : :admin)
+    end
 
     assets_fake_request = ActionDispatch::Request.new(request.env.dup)
     assets_for_url = params[:for_url]

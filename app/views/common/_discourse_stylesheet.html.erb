@@ -7,7 +7,7 @@
 <%- end %>
 
 <%- if staff? %>
-  <%= discourse_stylesheet_link_tag(:admin) %>
+  <%= discourse_stylesheet_link_tag(rtl? ? :admin_rtl : :admin) %>
 <%- end %>
 
 <%- Discourse.find_plugin_css_assets(include_official: allow_plugins?, include_unofficial: allow_third_party_plugins?, mobile_view: mobile_view?, desktop_view: !mobile_view?, request: request).each do |file| %>

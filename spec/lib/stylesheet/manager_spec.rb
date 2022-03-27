@@ -733,7 +733,7 @@ describe Stylesheet::Manager do
     it "correctly generates precompiled CSS" do
       scheme1 = ColorScheme.create!(name: "scheme1")
       scheme2 = ColorScheme.create!(name: "scheme2")
-      core_targets = [:desktop, :mobile, :desktop_rtl, :mobile_rtl, :admin, :wizard]
+      core_targets = [:desktop, :mobile, :desktop_rtl, :mobile_rtl, :admin, :admin_rtl, :wizard]
       theme_targets = [:desktop_theme, :mobile_theme]
 
       Theme.update_all(user_selectable: false)

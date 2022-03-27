@@ -42,7 +42,7 @@ class Stylesheet::Manager
   end
 
   def self.precompile_css
-    targets = [:desktop, :mobile, :desktop_rtl, :mobile_rtl, :admin, :wizard]
+    targets = [:desktop, :mobile, :desktop_rtl, :mobile_rtl, :admin, :admin_rtl, :wizard]
     targets += Discourse.find_plugin_css_assets(include_disabled: true, mobile_view: true, desktop_view: true)
 
     targets.each do |target|
