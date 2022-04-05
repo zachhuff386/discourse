@@ -1,14 +1,17 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
+require 'fileutils'
 require 'ipaddr'
 require 'resolv'
-require 'time'
+require 'set'
 require 'socket'
+require 'tempfile'
+require 'time'
 
 REFRESH_SECONDS = 30
 
-HOSTS_PATH = "/etc/hosts"
+HOSTS_PATH = ENV['DISCOURSE_HOSTS_FILE'] || "/etc/hosts"
 
 CRITICAL_HOST_ENV_VARS = %w{
   DISCOURSE_DB_HOST
@@ -18,8 +21,144 @@ CRITICAL_HOST_ENV_VARS = %w{
   DISCOURSE_REDIS_REPLICA_HOST
 }
 
+# Cache of hosts that have been checked before; used to track when a host was
+# first seen so we can prefer newer hosts if more than one SRV target exists.
+@known_hosts = {}
+
+class Host
+  # A Host has a hostname and zero or more IPv4 or IPv6 addresses
+  # as resolved by A or AAAA DNS RRs.
+  attr_accessor :last_seen
+  attr_reader :hostname, :ip4_addresses, :ip6_addresses, :first_seen
+
+  def initialize(hostname)
+    @hostname = hostname
+    @first_seen = Time.now.utc
+    @last_seen = Time.now.utc
+    @ip4_addresses = Set.new
+    @ip6_addresses = Set.new
+  end
+
+  def add_ip4_address(address)
+    @ip4_addresses << address
+  end
+
+  def add_ip6_address(address)
+    @ip6_addresses << address
+  end
+
+  def add_srv_target(target)
+    @srv_targets[target.hostname] = target
+  end
+
+  def addresses
+    (@ip4_addresses | @ip6_addresses).to_a
+  end
+
+  def has_any_address?
+    !addresses.empty?
+  end
+end
+
+class SRVTarget < Host
+  # An SRVTarget is a result of the SRV RR lookup of an SRVHost. This boils
+  # down to a Host but with a priority, port, and weight associated with it.
+  #
+  # An SRVTarget may be resolved but not healthy, which just means the associated
+  # service (postgresql / redis) is not available via the appropriate healthcheck.
+  attr_accessor :priority, :port, :weight, :healthy
+
+  def initialize(hostname, priority, weight, port)
+    super(hostname)
+
+    @priority = priority
+    @weight = weight
+    @port = port
+    @healthy = false
+  end
+end
+
+class SRVHost < Host
+  # An SRVHost is a Host with zero or more SRVTarget hosts. The 'hostname' refers
+  # to the non-SRV hostname (which is DISCOURSE_*_HOST) and the 'srv_hostname' is
+  # the hostname which will be used for the SRV RR lookup. This is required to
+  # support backwards compatibility for non-SRV hostname lookups.
+  #
+  # The srv_targets are the result of the SRV RR lookup against the hostname.
+  # The service_proto is one of postgresql, redis, or unknown.
+  attr_reader :srv_hostname, :srv_targets, :service_proto
+
+  def initialize(hostname, srv_hostname)
+    super(hostname)
+
+    # a hash containing {hostname: SRVTarget, ...}
+    @srv_targets = {}
+    @srv_hostname = srv_hostname
+
+    case srv_hostname
+    when /_postgresql._tcp/
+      @service_proto = :postgres
+    when /_redis._tcp/
+      @service_proto = :redis
+    else
+      @service_proto = :unknown
+    end
+  end
+
+  def add_srv_target(srv_target)
+    @srv_targets[srv_target.hostname] = srv_target
+  end
+
+  def get_srv_target(hostname)
+    @srv_targets.fetch(hostname, nil)
+  end
+
+  def purge_srv_target(srv_target)
+    @srv_targets.delete(srv_target.hostname)
+  end
+end
+
+def perform_redis_healthcheck(host:, port:, password:)
+  require 'redis'
+
+  begin
+    client = Redis.new(
+      host: host,
+      password: password,
+      port: port,
+      timeout: 1,
+    )
+    response = client.ping
+  rescue
+    false
+  ensure
+    client.close
+  end
+
+  response == "PONG"
+end
+
+def perform_postgres_healthcheck(host:, port:, user:, password:, dbname:)
+  require 'pg'
+
+  begin
+    response = PG::Connection.ping(
+      host: host,
+      port: port,
+      user: user,
+      password: password,
+      dbname: dbname,
+      connect_timeout: 2,  # minimum
+    )
+  rescue
+    false
+  end
+
+  response == PG::Constants::PQPING_OK
+end
+
 def log(msg)
-  STDERR.puts "#{Time.now.iso8601}: #{msg}"
+  STDERR.puts "#{Time.now.utc.iso8601}: #{msg}"
 end
 
 def error(msg)
@@ -40,20 +179,33 @@ def swap_address(hosts, name, ips)
   end
 
   ips.each do |ip|
-    new_file << "#{ip} #{name} # AUTO GENERATED: #{Time.now.iso8601}\n"
+    new_file << "#{ip} #{name} # AUTO GENERATED: #{Time.now.utc.iso8601}\n"
   end
 
   new_file.join
 end
 
-def hosts_entries(dns, name)
-  host = ENV[name]
+def lookup_addresses(dns_client, host)
+  ip4 = dns_client.getresources(host.hostname, Resolv::DNS::Resource::IN::A).map(&:address)
+  ip6 = dns_client.getresources(host.hostname, Resolv::DNS::Resource::IN::AAAA).map(&:address)
+  ip4.each { |address| host.add_ip4_address(address.to_s) }
+  ip6.each { |address| host.add_ip6_address(address.to_s) }
+end
 
-  results = dns.getresources(host, Resolv::DNS::Resource::IN::A)
-  results.concat dns.getresources(host, Resolv::DNS::Resource::IN::AAAA)
-
-  results.map do |result|
-    "#{result.address}"
+def lookup_srv_targets(dns_client, host)
+  targets = dns_client.getresources(host.srv_hostname, Resolv::DNS::Resource::IN::SRV)
+  targets.each do |target|
+    hostname = target.target.to_s
+    existing = host.get_srv_target(hostname)
+    if existing
+      existing.last_seen = Time.now.utc
+      existing.priority = target.priority
+      existing.weight = target.weight
+      existing.port = target.port
+    else
+      host.add_srv_target(
+        SRVTarget.new(hostname, target.priority, target.weight, target.port))
+    end
   end
 end
 
@@ -111,7 +263,8 @@ def report_failure(errors)
   end
 end
 
-@vars = CRITICAL_HOST_ENV_VARS.map do |name|
+# omit any hosts that cannot be resolved
+@all_hosts = CRITICAL_HOST_ENV_VARS.map do |name|
   begin
     host = ENV[name]
     next if !host || host.length == 0
@@ -122,50 +275,129 @@ end
   end
 end.compact
 
-def loop
+def run(dns_client)
   errors = Hash.new(0)
 
-  Resolv::DNS.open do |dns|
-    dns.timeouts = 2
+  # hash of HOSTNAME: [IP_ADDRESS, ...] pairs
+  resolved = {}
 
-    resolved = {}
+  @all_hosts.each do |var|
+    hostname = ENV[var]
+    host = @known_hosts.fetch(hostname, nil)
 
-    hosts = @vars.each do |var|
-      host = ENV[var]
+    srv_hostname = ENV.fetch("#{var}_SRV", nil)
+    if srv_hostname && !srv_hostname.empty?
+      if !host
+        host = SRVHost.new(hostname, srv_hostname)
+      end
 
       begin
-        entries = hosts_entries(dns, var)
+        lookup_srv_targets(dns_client, host)
+        if host.srv_targets.empty?
+          next
+        end
+        host.srv_targets.each_value do |target|
+          lookup_addresses(dns_client, target)
+          target.healthy = false
+          if !target.has_any_address?
+            next
+          end
+
+          begin
+            case host.service_proto
+            when :postgres
+              target.healthy = target.addresses.all? do |address|
+                perform_postgres_healthcheck(
+                  host: address,
+                  port: target.port,
+                  user: ENV["DISCOURSE_DB_USER_NAME"],
+                  password: ENV["DISCOURSE_DB_PASSWORD"],
+                  dbname: ENV["DISCOURSE_DB_NAME"],
+                )
+              end
+            when :redis
+              target.healthy = target.addresses.all? do |address|
+                perform_redis_healthcheck(
+                  host: address,
+                  port: target.port,
+                  password: ENV["DISCOURSE_REDIS_PASSWORD"],
+                )
+              end
+            end
+          rescue => e
+            error("Failed to perform healthcheck for #{host.hostname} - #{e}")
+            errors[host.hostname] += 1
+          end
+        end
+
+        # Remove all unhealthy targets.
+        host.srv_targets.reject { |_, v| v.healthy }.each_value { |t| host.purge_srv_target(t) }
+        if host.srv_targets.empty?
+          error("Failed to resolve DNS for #{host.hostname} - no healthy targets found by service discovery")
+          errors[host.hostname] += 1
+          next
+        end
+
+        # Pick the newest healthy target as the one to use. At this point targets
+        # are guaranteed to have addresses.
+        target = host.srv_targets.sort_by { |_, t| t.first_seen }.first[1]
+        resolved[host.hostname] = target.addresses
       rescue => e
-        error("Failed to resolve DNS for #{name} - #{e}")
-        errors[host] += 1
+        error("Failed to resolve DNS for #{host.hostname} - #{e}")
+        errors[host.hostname] += 1
+      end
+    else
+      # fallback to original behavior
+      if !host
+        host = Host.new(hostname)
       end
 
-      if entries&.length > 0
-        resolved[host] = entries
+      begin
+        lookup_addresses(dns_client, host)
+      rescue => e
+        error("Failed to resolve DNS for #{host.hostname} - #{e}")
+        errors[host.hostname] += 1
+      end
+
+      if host.has_any_address?
+        resolved[host.hostname] = host.addresses
       else
-        error("Failed to find any DNS entry for #{var} : #{ENV[var]}")
-        errors[host] += 1
-      end
-
-    end
-
-    hosts_content = File.read(HOSTS_PATH)
-    hosts = Resolv::Hosts.new(HOSTS_PATH)
-
-    changed = false
-    resolved.each do |name, ips|
-      if hosts.getaddresses(name).map(&:to_s).sort != ips.sort
-        log("IP addresses for #{name} changed to #{ips}")
-        hosts_content = swap_address(hosts_content, name, ips)
-        changed = true
+        error("Failed to find any DNS entry for #{var} : #{host.hostname}")
+        errors[host.hostname] += 1
       end
     end
 
-    if changed
-      File.write(HOSTS_PATH, hosts_content)
-    end
-
+    host.last_seen = Time.now.utc
+    @known_hosts[host.hostname] = host
   end
+
+  hosts_content = File.read(HOSTS_PATH)
+  hosts = Resolv::Hosts.new(HOSTS_PATH)
+
+  resolved.each do |hostname, ips|
+    if hosts.getaddresses(hostname).map(&:to_s).sort != ips.sort
+      log("IP addresses for #{hostname} changed to #{ips}")
+      hosts_content = swap_address(hosts_content, hostname, ips)
+    end
+  end
+
+  host_tmpfile = Tempfile.new("#{File.basename(HOSTS_PATH)}.#{$$}", File.dirname(HOSTS_PATH))
+  host_tmpfile.write(hosts_content)
+  host_tmpfile.flush
+
+  if !FileUtils.identical?(host_tmpfile.path, HOSTS_PATH)
+    File.write(HOSTS_PATH, File.read(host_tmpfile))
+  end
+
+  # eject any cached srv targets that were last seen more than 30 minutes ago
+  @known_hosts.each do |host|
+    if host.respond_to?(:srv_targets) && !host.srv_targets.empty?
+      host.srv_targets.each_value.filter do |t|
+        (Time.now.utc - 30 * 60) > t.last_seen
+      end.each { |t| host.purge_srv_target(t) }
+    end
+  end
+
 rescue => e
   error("Failed to access DNS - #{e}")
   errors[nil] = 1
@@ -178,6 +410,9 @@ ensure
 end
 
 while true
-  loop
+  Resolv::DNS.open do |dns_client|
+    dns_client.timeouts = 2
+    run(dns_client)
+  end
   sleep REFRESH_SECONDS
 end
