@@ -4,7 +4,7 @@ class InlineUploads
   PLACEHOLDER = "__replace__"
   PATH_PLACEHOLDER = "__replace_path__"
 
-  UPLOAD_REGEXP_PATTERN = "/original/(\\dX/(?:\\h/)*\\h{40}[a-zA-Z0-9.]*)(\\?v=\\d+)?"
+  UPLOAD_REGEXP_PATTERN = "/original/(?:\\dX/(?:\\h/)*(\\h{40})[a-zA-Z0-9.]*)(\\?v=\\d+)?"
   private_constant :UPLOAD_REGEXP_PATTERN
 
   def self.process(markdown, on_missing: nil)
@@ -214,7 +214,7 @@ class InlineUploads
     end
   end
 
-  def self.matched_uploads(node)
+  def self.url_regexps
     upload_path = Discourse.store.upload_path
     base_url = Discourse.base_url.sub(/https?:\/\//, "(https?://)")
 
@@ -243,10 +243,14 @@ class InlineUploads
       end
     end
 
+    regexps
+  end
+
+  def self.matched_uploads(node)
     matches = []
     node = node.to_s
 
-    regexps.each do |regexp|
+    url_regexps.each do |regexp|
       node.scan(/(^|[\n\s"'\(>])#{regexp}($|[\n\s"'\)<])/) do |matched|
         matches << matched[1]
       end
