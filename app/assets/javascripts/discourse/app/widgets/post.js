@@ -352,7 +352,7 @@ createWidget("post-date", {
   tagName: "div.post-info.post-date",
 
   html(attrs) {
-    const attributes = { class: "post-date" };
+    const attributes = { href: attrs.shareUrl, class: "post-date" };
     let date;
     if (attrs.wiki && attrs.lastWikiEdit) {
       attributes["class"] += " last-wiki-edit";
@@ -363,7 +363,8 @@ createWidget("post-date", {
     return h("a", { attributes }, dateNode(date));
   },
 
-  click() {
+  click(event) {
+    event.preventDefault();
     const post = this.findAncestorModel();
     const topic = post.topic;
     const controller = showModal("share-topic", { model: topic.category });
