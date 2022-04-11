@@ -30,6 +30,52 @@ describe OptimizedImage do
       end
     end
 
+    it 'should correctly crop images vertically' do
+      tmp_path = "/tmp/cropped.png"
+      desired_width = 100
+      desired_height = 66
+
+      begin
+        OptimizedImage.crop(
+          "#{Rails.root}/spec/fixtures/images/logo.png", # 244x66px
+          tmp_path,
+          desired_width,
+          desired_height
+        )
+
+        w, h = FastImage.size(tmp_path)
+
+        expect(w).to eq(desired_width)
+        expect(h).to eq(desired_height)
+
+      ensure
+        File.delete(tmp_path) if File.exist?(tmp_path)
+      end
+    end
+
+    it 'should correctly crop images horizontally' do
+      tmp_path = "/tmp/cropped.png"
+      desired_width = 244
+      desired_height = 500
+
+      begin
+        OptimizedImage.crop(
+          "#{Rails.root}/spec/fixtures/images/logo.png", # 244x66px
+          tmp_path,
+          desired_width,
+          desired_height
+        )
+
+        w, h = FastImage.size(tmp_path)
+
+        expect(w).to eq(desired_width)
+        expect(h).to eq(desired_height)
+
+      ensure
+        File.delete(tmp_path) if File.exist?(tmp_path)
+      end
+    end
+
     describe ".resize_instructions" do
       let(:image) { "#{Rails.root}/spec/fixtures/images/logo.png" }
 
