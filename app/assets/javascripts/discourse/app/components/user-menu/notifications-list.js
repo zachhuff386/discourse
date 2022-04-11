@@ -36,18 +36,27 @@ export default class UserMenuNotificationsList extends GlimmerComponent {
     this.fetchNotifications();
   }
 
+  get filterByType() {
+    return null;
+  }
+
   fetchNotifications() {
     this.loading = true;
+
+    const params = {
+      recent: true,
+      silent: this.currentUser.enforcedSecondFactor,
+      limit: 30,
+    };
+    let cacheKey = "recent-notifications";
+    if (this.filterByType) {
+      params.filter_by_type = this.filterByType;
+      cacheKey += `-type-${this.filterByType}`;
+    }
+
+    console.log(this, this.filterByType, params);
     this.store
-      .findStale(
-        "notification",
-        {
-          recent: true,
-          silent: this.currentUser.enforcedSecondFactor,
-          limit: 30,
-        },
-        { cacheKey: "recent-notifications" }
-      )
+      .findStale("notification", params, { cacheKey })
       .refresh()
       .then((data) => {
         this.items = data.content.map((notification) => {
